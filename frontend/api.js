@@ -12,8 +12,8 @@
  */
 
 // ── Config ───────────────────────────────────────────────────
-const API_BASE  = 'http://localhost:5000/api';   // → backend server.js PORT
-const SOCKET_URL = 'http://localhost:5000';       // → same origin as API
+const API_BASE  = 'https://lasu-connect.onrender.com/api';
+const SOCKET_URL = 'https://lasu-connect.onrender.com';
 
 // ─────────────────────────────────────────────────────────────
 // Auth helpers — token + user persisted in localStorage
