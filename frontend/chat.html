@@ -291,6 +291,151 @@
     .pm-row:hover{background:var(--lc-surface3);color:var(--lc-text)}
     .pm-row.danger{color:var(--lc-danger)}
     .pm-sep{height:1px;background:var(--lc-border);margin:4px 0}
+    /* ============================================================
+   LASU CONNECT — MOBILE RESPONSIVE FIX
+   Add this entire block inside your <style> tag at the bottom,
+   just before the closing </style> tag
+   ============================================================ */
+
+/* HAMBURGER BUTTON — hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--lc-surface2);
+  border: 1px solid var(--lc-border);
+  color: var(--lc-muted);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+/* BACK BUTTON in topbar — hidden on desktop */
+.mobile-back-btn {
+  display: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--lc-surface2);
+  border: 1px solid var(--lc-border);
+  color: var(--lc-muted);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+/* OVERLAY behind sidebar on mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 199;
+}
+.sidebar-overlay.open { display: block; }
+
+@media (max-width: 768px) {
+
+  /* Show hamburger and back buttons */
+  .mobile-menu-btn { display: flex; }
+  .mobile-back-btn { display: flex; }
+
+  /* Hide rail on mobile — too narrow */
+  .lc-rail { display: none; }
+
+  /* SIDEBAR — slides in from left as drawer */
+  .lc-sidebar {
+    position: fixed;
+    top: 54px;
+    left: 0;
+    bottom: 0;
+    width: 85vw;
+    max-width: 320px;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
+  .lc-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* CHAT takes full width */
+  .lc-chat {
+    width: 100%;
+    flex: 1;
+  }
+
+  /* When a conversation is open, hide sidebar area cleanly */
+  .lc-app-body {
+    position: relative;
+  }
+
+  /* Message bubbles wider on mobile */
+  .msg-col {
+    max-width: 82%;
+  }
+
+  /* Input area fixed above mobile keyboard */
+  .input-area {
+    position: sticky;
+    bottom: 0;
+    background: var(--lc-surface);
+    z-index: 50;
+  }
+
+  /* Navbar adjustments */
+  .lc-brand-name { font-size: 15px; }
+  .lc-brand-tag { display: none; }
+
+  /* Profile menu full width on mobile */
+  .profile-menu {
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-width: 280px;
+  }
+
+  /* Emoji tray adjustments */
+  .emoji-tray {
+    bottom: 80px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    max-width: none;
+  }
+
+  /* Context menu adjustments */
+  .ctx-menu {
+    min-width: 200px;
+  }
+
+  /* Modal full screen on mobile */
+  .modal-dialog {
+    margin: 8px;
+  }
+
+  /* Messages padding adjustment */
+  .messages-wrap {
+    padding: 12px 10px;
+  }
+
+  /* Chat topbar back button spacing */
+  .chat-topbar {
+    padding: 0 10px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .msg-col { max-width: 88%; }
+  .msg-bubble { font-size: 13px; padding: 7px 11px; }
+  .lc-navbar { padding: 0 10px; gap: 8px; }
+}
   </style>
 </head>
 <body>
@@ -301,6 +446,9 @@
     <span class="lc-brand-name">LASU Connect</span>
     <span class="lc-brand-tag">BETA</span>
   </a>
+  <div class="mobile-menu-btn" id="btn-mobile-menu">
+  <i class="bi bi-list"></i>
+</div>
   <div class="d-flex align-items-center gap-2 ms-auto">
     <div class="nav-icon-btn" title="Notifications"><i class="bi bi-bell"></i></div>
     <div class="nav-icon-btn" id="btn-new-dm-nav" title="New Message"><i class="bi bi-pencil-square"></i></div>
@@ -322,7 +470,8 @@
   <div class="pm-sep"></div>
   <div class="pm-row danger" id="signout-btn"><i class="bi bi-box-arrow-right"></i> Sign Out</div>
 </div>
-
+  
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="lc-app-body">
   <div class="lc-rail">
     <div class="rail-item active" title="Messages"><i class="bi bi-chat-dots"></i></div>
@@ -355,6 +504,9 @@
 
   <div class="lc-chat">
     <div class="chat-topbar" id="chat-topbar">
+      <div class="mobile-back-btn" id="btn-mobile-back">
+  <i class="bi bi-arrow-left"></i>
+</div>
       <div class="ci-av" id="topbar-av" style="width:38px;height:38px;font-size:18px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;color:#fff;"></div>
       <div class="ct-info">
         <div class="ct-name" id="topbar-name">—</div>
@@ -608,6 +760,8 @@
   // OPEN CONVERSATION
   async function openConvo(convId, conv) {
     activeConvId = convId;
+    document.querySelector('.lc-sidebar').classList.remove('open');
+document.getElementById('sidebar-overlay').classList.remove('open');
     document.querySelectorAll('.chat-item').forEach(c => c.classList.remove('active'));
     document.querySelector('[data-conv-id="'+convId+'"]')?.classList.add('active');
     const isDM = conv.type === 'dm';
@@ -956,6 +1110,23 @@
   document.getElementById('group-member-search').addEventListener('input', function(){ searchGroupMembers(this.value); });
   document.getElementById('chat-search-input').addEventListener('input', function(){ filterChats(this.value); });
 
+  
+// MOBILE SIDEBAR TOGGLE
+document.getElementById('btn-mobile-menu').addEventListener('click', () => {
+  document.getElementById('lc-sidebar') || document.querySelector('.lc-sidebar').classList.toggle('open');
+  document.querySelector('.lc-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+});
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+  document.querySelector('.lc-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+});
+document.getElementById('btn-mobile-back').addEventListener('click', () => {
+  document.querySelector('.lc-sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+});
+// Auto-close sidebar when conversation opens on mobile
+const _origOpenConvo = openConvo;
   // INIT
   loadConversations();
   connectSocket();
