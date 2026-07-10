@@ -1,6 +1,6 @@
 {
   "name": "LASU Connect",
-  "short_name": "LASU Connect",
+  "short_name": "LASU",
   "description": "The official messaging platform for Lagos State University students.",
   "start_url": "/login.html",
   "display": "standalone",
