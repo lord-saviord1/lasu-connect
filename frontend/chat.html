@@ -538,7 +538,11 @@
       renderList(allConvos);
       if (activeConvId) document.querySelector('[data-conv-id="'+activeConvId+'"]')?.classList.add('active');
     });
-    socket.on('messageDeleted', ({ messageId }) => {
+    socket.on('messageRead', ({ messageId }) => {
+  const tick = document.querySelector('.msg-tick[data-msg-id="' + messageId + '"]');
+  if (tick) tick.classList.add('read');
+});
+socket.on('messageDeleted', ({ messageId }) => {
       const row = document.querySelector('[data-msg-id="' + messageId + '"]');
       if (row) {
         const b = row.querySelector('.msg-bubble');
@@ -668,7 +672,7 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     const row = document.createElement('div');
     row.className = 'msg-row' + (isMine ? ' mine' : '');
     row.dataset.msgId = msg._id;
-    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + escapeHtml(msg.content||'') + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2 msg-tick"></i>' : '') + '</div></div>';
+    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + escapeHtml(msg.content||'') + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
     row.addEventListener('contextmenu', showCtx);
     msgs.insertBefore(row, typing);
     if (!skipScroll) scrollToBottom();
