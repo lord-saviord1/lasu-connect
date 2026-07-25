@@ -9,12 +9,24 @@ router.use(protect);
 // ── GET /api/conversations ────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const conversations = await Conversation.find({ members: req.user._id })
+   const conversations = await Conversation.find({ members: req.user._id })
       .populate('members', 'displayName avatar isOnline lastSeen')
       .populate('lastMessage.sender', 'displayName')
       .sort({ 'lastMessage.timestamp': -1, createdAt: -1 });
 
-    res.json({ success: true, conversations });
+    // Add unread count for each conversation
+    const conversationsWithUnread = await Promise.all(
+      conversations.map(async (convo) => {
+        const unreadCount = await Message.countDocuments({
+          conversationId: convo._id,
+          sender: { $ne: req.user._id },
+          readBy: { $nin: [req.user._id] },
+        });
+        return { ...convo.toObject(), unreadCount };
+      })
+    );
+
+    res.json({ success: true, conversations: conversationsWithUnread });
   } catch (err) {
     console.error('Get conversations error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
