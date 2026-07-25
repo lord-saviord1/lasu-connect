@@ -99,7 +99,7 @@
   .ci-name{font-size:13px;font-weight:500;color:var(--lc-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ci-time{font-size:10px;color:var(--lc-muted2);flex-shrink:0}
   .ci-row2{display:flex;align-items:center;justify-content:space-between}
-  .ci-preview{font-size:12px;color:var(--lc-muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .ci-unread{min-width:18px;height:18px;border-radius:50%;background:var(--lc-green-mid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;}
   /* EMPTY STATE */
   .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;flex:1}
   .empty-state-icon{width:64px;height:64px;border-radius:18px;background:var(--lc-green-soft);border:1px solid rgba(0,102,51,0.3);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px}
@@ -580,7 +580,7 @@
       const el = document.createElement('div');
       el.className = 'chat-item';
       el.dataset.convId = c._id;
-      el.innerHTML = '<div class="ci-av-wrap"><div class="ci-av ' + (isDM?'':'group') + '" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));">' + avatar + '</div>' + (online ? '<div class="ci-online"></div>' : '') + '</div><div class="ci-body"><div class="ci-row1"><span class="ci-name">' + escapeHtml(name) + '</span><span class="ci-time">' + time + '</span></div><div class="ci-row2"><span class="ci-preview">' + escapeHtml(preview) + '</span></div></div>';
+el.innerHTML = '<div class="ci-av-wrap"><div class="ci-av ' + (isDM?'':'group') + '" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));">' + avatar + '</div>' + (online ? '<div class="ci-online"></div>' : '') + '</div><div class="ci-body"><div class="ci-row1"><span class="ci-name">' + escapeHtml(name) + '</span><span class="ci-time">' + time + '</span></div><div class="ci-row2"><span class="ci-preview">' + escapeHtml(preview) + '</span>' + (c.unreadCount > 0 ? '<span class="ci-unread">' + c.unreadCount + '</span>' : '') + '</div></div>';
       el.addEventListener('click', () => openConvo(c._id, c));
       list.appendChild(el);
     });
@@ -599,6 +599,8 @@
   async function openConvo(convId, conv) {
     // Close sidebar on mobile when opening a conversation
     closeSidebar();
+    const convItem = document.querySelector('[data-conv-id="'+convId+'"]');
+if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) badge.remove(); }
     activeConvId = convId;
     document.querySelectorAll('.chat-item').forEach(c => c.classList.remove('active'));
     document.querySelector('[data-conv-id="'+convId+'"]')?.classList.add('active');
