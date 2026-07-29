@@ -169,6 +169,8 @@
   .send-btn:hover{opacity:.9;transform:scale(1.06)}
   .mic-btn{width:40px;height:40px;border-radius:50%;background:var(--lc-surface2);border:1px solid var(--lc-border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--lc-muted);transition:all .15s;flex-shrink:0}
   .mic-btn:hover{border-color:var(--lc-danger);color:var(--lc-danger)}
+  .mic-btn.recording{background:var(--lc-danger);border-color:var(--lc-danger);color:#fff;animation:micPulse 1.2s infinite}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
   /* EMOJI TRAY */
   .emoji-tray{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--lc-surface2);border:1px solid var(--lc-border2);border-radius:12px;padding:10px 12px;display:none;gap:6px;flex-wrap:wrap;max-width:320px;z-index:500;box-shadow:0 10px 40px rgba(0,0,0,.5)}
   .emoji-tray.open{display:flex}
@@ -177,6 +179,9 @@
   /* CTX MENU */
   .ctx-menu{position:fixed;z-index:600;background:var(--lc-surface2);border:1px solid var(--lc-border2);border-radius:10px;padding:5px 0;min-width:165px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
   .ctx-menu.open{display:block}
+  /* NEW CHAT MENU (New Message / New Group) */
+  .new-menu{position:fixed;z-index:600;background:var(--lc-surface2);border:1px solid var(--lc-border2);border-radius:10px;padding:5px 0;min-width:180px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
+  .new-menu.open{display:block}
   .ctx-row{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;font-size:12.5px;color:var(--lc-muted);transition:background .1s}
   .ctx-row:hover{background:var(--lc-surface3);color:var(--lc-text)}
   .ctx-row.danger{color:var(--lc-danger)}
@@ -396,6 +401,11 @@
   <span>❤️</span><span>😅</span><span>🙏🏾</span><span>🎓</span>
   <span>📚</span><span>🏆</span><span>💯</span><span>👀</span>
   <span>😤</span><span>🧠</span><span>🫡</span><span>🎉</span>
+</div>
+
+<div class="new-menu" id="new-menu">
+  <div class="ctx-row" id="new-menu-dm"><i class="bi bi-chat-left-text"></i>New Message</div>
+  <div class="ctx-row" id="new-menu-group"><i class="bi bi-people"></i>New Group</div>
 </div>
 
 <div class="ctx-menu" id="ctx-menu">
@@ -707,6 +717,32 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
   let _lastMsgSender = null;
   let _lastMsgTime = null;
 
+  function formatFileSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function renderBubbleContent(msg) {
+    if (msg.type === 'image' && msg.fileUrl) {
+      const caption = msg.content ? '<div style="margin-top:6px;">' + escapeHtml(msg.content) + '</div>' : '';
+      return '<a href="' + escapeHtml(msg.fileUrl) + '" target="_blank" rel="noopener" style="display:block;">' +
+        '<img src="' + escapeHtml(msg.fileUrl) + '" alt="Image" style="max-width:240px;max-height:280px;border-radius:10px;display:block;">' +
+        '</a>' + caption;
+    }
+    if (msg.type === 'voice' && msg.fileUrl) {
+      return '<audio controls src="' + escapeHtml(msg.fileUrl) + '" style="height:36px;max-width:220px;"></audio>';
+    }
+    if (msg.type === 'file' && msg.fileUrl) {
+      return '<a href="' + escapeHtml(msg.fileUrl) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none;">' +
+        '<i class="bi bi-file-earmark-arrow-down" style="font-size:22px;flex-shrink:0;"></i>' +
+        '<div><div style="font-size:12.5px;font-weight:600;">' + escapeHtml(msg.fileName || 'File') + '</div>' +
+        '<div style="font-size:10.5px;opacity:.75;">' + formatFileSize(msg.fileSize) + '</div></div></a>';
+    }
+    return escapeHtml(msg.content || '');
+  }
+
   function appendMessage(msg, isMine, skipScroll) {
     const msgs = document.getElementById('msgs');
     const typing = document.getElementById('typing-row');
@@ -722,7 +758,7 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     row.className = 'msg-row' + (isMine ? ' mine' : '') + (isGrouped ? ' grouped' : '');
     row.dataset.msgId = msg._id;
     // Only show time on last message in a group (or standalone)
-    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine && !isGrouped ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + escapeHtml(msg.content||'') + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
+    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine && !isGrouped ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + renderBubbleContent(msg) + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
     row.addEventListener('contextmenu', showCtx);
     msgs.insertBefore(row, typing);
     if (!skipScroll) scrollToBottom();
@@ -753,6 +789,49 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     clearTimeout(typingTimer);
   }
 
+  async function uploadFile(file) {
+    const token = Auth.getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(API_BASE + '/upload', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData,
+    });
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error('Server returned an unexpected response. Please try again.');
+    }
+    if (!response.ok) {
+      if (response.status === 401) {
+        Auth.clear();
+        window.location.replace('login.html');
+      }
+      throw new Error(data.message || 'Upload failed (' + response.status + ')');
+    }
+    return data; // { success, url, fileName, fileSize, resourceType }
+  }
+
+  function sendUploadedMessage(type, fileUrl, fileName, fileSize) {
+    if (!activeConvId) return;
+    const strip = document.getElementById('reply-strip');
+    const replyTo = strip.style.display !== 'none' ? strip.dataset.replyId : null;
+    socket?.emit('sendMessage', { conversationId: activeConvId, content: '', type, replyTo, fileUrl, fileName, fileSize }, res => {
+      if (res?.error) console.error('Send failed:', res.error);
+    });
+    const idx = allConvos.findIndex(c => c._id === activeConvId);
+    if (idx > -1) {
+      const label = type === 'image' ? '📷 Photo' : type === 'voice' ? '🎤 Voice note' : '📎 ' + (fileName || 'File');
+      allConvos[idx].lastMessage = { text: label, timestamp: new Date().toISOString() };
+      allConvos.sort((a,b) => new Date(b.lastMessage?.timestamp||0) - new Date(a.lastMessage?.timestamp||0));
+      renderList(allConvos);
+      document.querySelector('[data-conv-id="'+activeConvId+'"]')?.classList.add('active');
+    }
+    closeReply();
+  }
+
   function handleTyping() {
     if (!activeConvId) return;
     socket?.emit('typing', { conversationId: activeConvId });
@@ -773,6 +852,34 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     const m = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
     m.show();
     setTimeout(() => document.getElementById('dm-search-input').focus(), 400);
+  }
+
+  function openGroupModal() {
+    closeSidebar();
+    document.getElementById('group-name-input').value = '';
+    selectedMembers = [];
+    document.getElementById('group-selected-members').innerHTML = '';
+    document.getElementById('group-member-results').innerHTML = '';
+    document.getElementById('group-member-search').value = '';
+    document.querySelectorAll('#group-type-tags .lc-tag').forEach((t,i) => t.classList.toggle('active', i === 0));
+    const el = document.getElementById('newGroupModal');
+    const m = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+    m.show();
+    setTimeout(() => document.getElementById('group-name-input').focus(), 400);
+  }
+
+  function toggleNewMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('new-menu');
+    const isOpen = menu.classList.contains('open');
+    document.getElementById('ctx-menu').classList.remove('open');
+    if (isOpen) { menu.classList.remove('open'); return; }
+    const btn = document.getElementById('btn-new-dm-sidebar');
+    const rect = btn.getBoundingClientRect();
+    const menuWidth = 180;
+    menu.style.top = (rect.bottom + 6) + 'px';
+    menu.style.left = Math.min(rect.left, window.innerWidth - menuWidth - 10) + 'px';
+    menu.classList.add('open');
   }
 
   function searchUsers(query) {
@@ -947,16 +1054,79 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     document.getElementById('emoji-tray').classList.toggle('open');
   }
 
-  function toggleMic() {
-    _micOn = !_micOn;
+  let _mediaRecorder = null;
+  let _audioChunks = [];
+  let _micStream = null;
+
+  async function toggleMic() {
+    if (!activeConvId) { alert('Open a conversation first.'); return; }
     const btn = document.getElementById('mic-btn');
-    btn.querySelector('i').className = _micOn ? 'bi bi-stop-fill' : 'bi bi-mic';
+    if (!_micOn) {
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        alert('Microphone access is required to record a voice note.');
+        return;
+      }
+      _micStream = stream;
+      _audioChunks = [];
+      _mediaRecorder = new MediaRecorder(stream);
+      _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
+      _mediaRecorder.onstop = async () => {
+        _micStream?.getTracks().forEach(t => t.stop());
+        const blob = new Blob(_audioChunks, { type: 'audio/webm' });
+        if (blob.size === 0) return;
+        const file = new File([blob], 'voice-note-' + Date.now() + '.webm', { type: 'audio/webm' });
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+        try {
+          const result = await uploadFile(file);
+          sendUploadedMessage('voice', result.url, result.fileName, result.fileSize);
+        } catch (err) {
+          alert('Voice note upload failed: ' + err.message);
+        } finally {
+          btn.style.opacity = '';
+          btn.style.pointerEvents = '';
+        }
+      };
+      _mediaRecorder.start();
+      _micOn = true;
+      btn.classList.add('recording');
+      btn.querySelector('i').className = 'bi bi-stop-fill';
+      btn.title = 'Stop recording';
+    } else {
+      _micOn = false;
+      btn.classList.remove('recording');
+      btn.querySelector('i').className = 'bi bi-mic';
+      btn.title = 'Voice note';
+      _mediaRecorder?.stop();
+    }
   }
 
   function fakeAttach() {
+    if (!activeConvId) { alert('Open a conversation first.'); return; }
     const inp = document.createElement('input');
     inp.type = 'file';
-    inp.onchange = e => { if (e.target.files[0]) alert('📎 ' + e.target.files[0].name + '\n\nFile uploads coming soon.'); };
+    inp.accept = 'image/*,application/pdf,.doc,.docx,.txt,.zip,.mp3,.mp4';
+    inp.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 15 * 1024 * 1024) { alert('File is too large. Max size is 15MB.'); return; }
+      const attachBtn = document.getElementById('btn-attach');
+      attachBtn.style.opacity = '0.5';
+      attachBtn.style.pointerEvents = 'none';
+      try {
+        const result = await uploadFile(file);
+        const type = result.resourceType === 'image' ? 'image' : 'file';
+        sendUploadedMessage(type, result.url, result.fileName, result.fileSize);
+      } catch (err) {
+        alert('Upload failed: ' + err.message);
+      } finally {
+        attachBtn.style.opacity = '';
+        attachBtn.style.pointerEvents = '';
+      }
+    };
     inp.click();
   }
 
@@ -1005,6 +1175,9 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
   document.addEventListener('click', e => {
     const menu = document.getElementById('ctx-menu');
     if (!menu.contains(e.target)) menu.classList.remove('open');
+    const newMenu = document.getElementById('new-menu');
+    const newBtn = document.getElementById('btn-new-dm-sidebar');
+    if (!newMenu.contains(e.target) && !newBtn.contains(e.target)) newMenu.classList.remove('open');
     const profile = document.getElementById('profile-menu');
     const chip = document.getElementById('btn-profile-chip');
     if (!profile.contains(e.target) && !chip.contains(e.target)) profile.classList.remove('open');
@@ -1026,8 +1199,10 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     });
   });
   document.getElementById('btn-new-dm-nav').addEventListener('click', openDMModal);
-  document.getElementById('btn-new-dm-sidebar').addEventListener('click', openDMModal);
+  document.getElementById('btn-new-dm-sidebar').addEventListener('click', toggleNewMenu);
   document.getElementById('btn-new-dm-empty').addEventListener('click', openDMModal);
+  document.getElementById('new-menu-dm').addEventListener('click', () => { document.getElementById('new-menu').classList.remove('open'); openDMModal(); });
+  document.getElementById('new-menu-group').addEventListener('click', () => { document.getElementById('new-menu').classList.remove('open'); openGroupModal(); });
   document.getElementById('btn-profile-chip').addEventListener('click', toggleProfileMenu);
   document.getElementById('filter-all').addEventListener('click', function(){ setFilter(this,'all'); });
   document.getElementById('filter-group').addEventListener('click', function(){ setFilter(this,'group'); });
