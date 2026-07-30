@@ -20,24 +20,22 @@ const sendTokenResponse = (user, statusCode, res) => {
 
 // ── Rate limiters ─────────────────────────────────────────
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 10,
   message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' }
 });
 
 const otpLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes
+  windowMs: 10 * 60 * 1000,
   max: 5,
   message: { success: false, message: 'Too many OTP requests. Try again in 10 minutes.' }
 });
 
 // ── POST /api/auth/register ───────────────────────────────
-// Creates a new (unverified) user and sends OTP to LASU Mail
 router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
   try {
     const { fullName, displayName, email, matricNumber, password, faculty, department, level, avatar } = req.body;
 
-    // Basic field checks
     const required = { fullName, displayName, email, matricNumber, password, faculty, department, level };
     for (const [key, val] of Object.entries(required)) {
       if (!val || !String(val).trim()) {
@@ -48,23 +46,40 @@ router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
     }
 
-    // Check for duplicates
-    const existingEmail  = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedMatric = matricNumber.trim().toUpperCase();
+
+    // ── KEY FIX: If email exists but unverified, delete and allow re-registration ──
+    const existingEmail = await User.findOne({ email: normalizedEmail });
     if (existingEmail) {
-      return res.status(409).json({ success: false, message: 'An account with this LASU Mail already exists.' });
+      if (!existingEmail.isVerified) {
+        // Clean up stale unverified account and its OTPs so they can start fresh
+        await OTP.deleteMany({ email: normalizedEmail });
+        await User.deleteOne({ _id: existingEmail._id });
+      } else {
+        return res.status(409).json({ success: false, message: 'An account with this LASU Mail already exists.' });
+      }
     }
-    const existingMatric = await User.findOne({ matricNumber: matricNumber.trim() });
+
+    // Check matric number — only block if the existing account is verified
+    const existingMatric = await User.findOne({ matricNumber: normalizedMatric });
     if (existingMatric) {
-      return res.status(409).json({ success: false, message: 'An account with this matric number already exists.' });
+      if (existingMatric.isVerified) {
+        return res.status(409).json({ success: false, message: 'An account with this matric number already exists.' });
+      } else {
+        // Clean up stale unverified account with same matric
+        await OTP.deleteMany({ email: existingMatric.email });
+        await User.deleteOne({ _id: existingMatric._id });
+      }
     }
 
     // Create user (not yet verified)
     const user = await User.create({
       fullName:     fullName.trim(),
       displayName:  displayName.trim(),
-      email:        email.toLowerCase().trim(),
-      matricNumber: matricNumber.trim().toUpperCase(),
-      passwordHash: password, // pre-save hook hashes this
+      email:        normalizedEmail,
+      matricNumber: normalizedMatric,
+      passwordHash: password,
       faculty,
       department,
       level,
@@ -77,7 +92,7 @@ router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
     await OTP.create({
       email:     user.email,
       codeHash:  hash,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
     // Send OTP email
@@ -86,7 +101,7 @@ router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
     res.status(201).json({
       success: true,
       message: `Verification code sent to ${user.email}. Check your LASU Mail inbox.`,
-      email: user.email, // return so frontend can prefill OTP screen
+      email: user.email,
     });
 
   } catch (err) {
@@ -96,7 +111,6 @@ router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
 });
 
 // ── POST /api/auth/verify-otp ─────────────────────────────
-// Verifies the 6-digit code and activates the account
 router.post('/verify-otp', otpLimiter, async (req, res) => {
   try {
     const { email, code } = req.body;
@@ -104,7 +118,6 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and OTP code are required.' });
     }
 
-    // Find the most recent unused OTP for this email
     const otpDoc = await OTP.findOne({ email: email.toLowerCase(), used: false }).sort({ createdAt: -1 });
     if (!otpDoc) {
       return res.status(400).json({ success: false, message: 'No active OTP found. Please request a new one.' });
@@ -115,11 +128,9 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
       return res.status(400).json({ success: false, message: reason });
     }
 
-    // Mark OTP as used
     otpDoc.used = true;
     await otpDoc.save();
 
-    // Activate user
     const user = await User.findOneAndUpdate(
       { email: email.toLowerCase() },
       { isVerified: true },
@@ -138,15 +149,17 @@ router.post('/verify-otp', otpLimiter, async (req, res) => {
 });
 
 // ── POST /api/auth/resend-otp ─────────────────────────────
-// Resends a fresh OTP (rate limited to 5 per 10 mins)
 router.post('/resend-otp', otpLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user)       return res.status(404).json({ success: false, message: 'No account found with this email.' });
+    if (!user)           return res.status(404).json({ success: false, message: 'No account found with this email.' });
     if (user.isVerified) return res.status(400).json({ success: false, message: 'Account is already verified.' });
+
+    // Invalidate all previous OTPs for this email
+    await OTP.updateMany({ email: email.toLowerCase(), used: false }, { used: true });
 
     const { raw, hash } = await generateOTP();
     await OTP.create({
@@ -172,13 +185,17 @@ router.post('/login', authLimiter, validateLasuMail, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
-    // Explicitly select passwordHash (excluded by default)
     const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
     if (!user.isVerified) {
-      return res.status(403).json({ success: false, message: 'Please verify your LASU Mail before logging in.' });
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your LASU Mail before logging in.',
+        unverified: true,
+        email: user.email,
+      });
     }
 
     const match = await user.comparePassword(password);
@@ -195,7 +212,6 @@ router.post('/login', authLimiter, validateLasuMail, async (req, res) => {
 });
 
 // ── GET /api/auth/me ──────────────────────────────────────
-// Returns the current logged-in user's profile
 router.get('/me', protect, async (req, res) => {
   res.json({ success: true, user: req.user });
 });
@@ -206,7 +222,6 @@ router.post('/forgot-password', otpLimiter, validateLasuMail, async (req, res) =
     const { email } = req.body;
     const user = await User.findOne({ email: email.toLowerCase() });
 
-    // Always return success to prevent email enumeration
     if (!user) {
       return res.json({ success: true, message: 'If that email exists, a reset code has been sent.' });
     }
@@ -250,7 +265,7 @@ router.post('/reset-password', otpLimiter, async (req, res) => {
     await otpDoc.save();
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    user.passwordHash = newPassword; // pre-save hook rehashes
+    user.passwordHash = newPassword;
     await user.save();
 
     res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
