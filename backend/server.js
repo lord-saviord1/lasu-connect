@@ -41,10 +41,12 @@ app.set('io', io);
 app.use(helmet());
 
 // CORS — only allow requests from the frontend
+//  Define allowedOrigins first
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
   .split(',')
   .map(o => o.trim());
 
+// Then use it in your CORS middleware
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -55,6 +57,7 @@ app.use(cors({
   },
   credentials: true,
 }));
+
 
 // Parse JSON bodies
 app.use(express.json({ limit: '10mb' }));
