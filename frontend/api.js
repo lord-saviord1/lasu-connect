@@ -11,9 +11,6 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-// ── Config ───────────────────────────────────────────────────
-const API_BASE  = 'https://lasu-connect.onrender.com/api';
-const SOCKET_URL = 'https://lasu-connect.onrender.com';
 
 
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
