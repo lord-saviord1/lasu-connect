@@ -234,23 +234,34 @@
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199}
   .sidebar-overlay.open{display:block}
 
+  /* MOBILE BOTTOM NAV */
+  .mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--lc-surface);border-top:1px solid var(--lc-border);z-index:300;align-items:center;justify-content:space-around;padding:0 8px}
+  .mobile-bottom-nav .mbn-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:6px 12px;border-radius:10px;color:var(--lc-muted2);font-size:10px;min-width:48px;transition:all .15s}
+  .mobile-bottom-nav .mbn-item i{font-size:20px}
+  .mobile-bottom-nav .mbn-item.active{color:var(--lc-green-mid)}
+  .mobile-bottom-nav .mbn-item span{font-size:9px;font-weight:500}
+
   @media(max-width:768px){
     .mobile-menu-btn{display:flex}
-    .mobile-back-btn{display:flex}
+    .mobile-back-btn{display:none}
     .lc-rail{display:none}
-    .lc-sidebar{position:fixed;top:54px;left:0;bottom:0;width:85vw;max-width:320px;z-index:200;transform:translateX(-100%);transition:transform 0.25s ease;box-shadow:4px 0 24px rgba(0,0,0,.5)}
+    .mobile-bottom-nav{display:flex}
+    .lc-sidebar{position:fixed;top:54px;left:0;bottom:56px;width:85vw;max-width:320px;z-index:200;transform:translateX(-100%);transition:transform 0.25s ease;box-shadow:4px 0 24px rgba(0,0,0,.5)}
     .lc-sidebar.open{transform:translateX(0)}
     .lc-chat{width:100%;flex:1}
+    body{padding-bottom:56px}
     .msg-col{max-width:82%}
     .input-area{position:sticky;bottom:0;background:var(--lc-surface);z-index:50}
     .lc-brand-name{font-size:15px}
     .lc-brand-tag{display:none}
-    .profile-menu{right:8px;width:calc(100vw - 16px);max-width:280px}
-    .emoji-tray{bottom:80px;left:8px;right:8px;transform:none;max-width:none}
+    .profile-menu{right:8px;width:calc(100vw - 16px);max-width:280px;top:58px}
+    .emoji-tray{bottom:136px;left:8px;right:8px;transform:none;max-width:none}
     .ctx-menu{min-width:200px}
     .modal-dialog{margin:8px}
     .messages-wrap{padding:12px 10px}
     .chat-topbar{padding:0 10px;gap:8px}
+    .msg-toast{bottom:146px}
+    .scroll-btn{bottom:136px}
   }
   @media(max-width:380px){
     .msg-col{max-width:88%}
@@ -298,8 +309,8 @@
     <div class="pm-name" id="pm-name">—</div>
     <div class="pm-email" id="pm-email">—</div>
   </div>
-  <div class="pm-row"><i class="bi bi-person"></i> My Profile</div>
-  <div class="pm-row"><i class="bi bi-gear"></i> Settings</div>
+  <div class="pm-row" id="btn-my-profile"><i class="bi bi-person"></i> My Profile</div>
+  <div class="pm-row" id="btn-settings"><i class="bi bi-gear"></i> Settings</div>
   <div class="pm-sep"></div>
   <div class="pm-row danger" id="signout-btn"><i class="bi bi-box-arrow-right"></i> Sign Out</div>
 </div>
@@ -338,7 +349,6 @@
 
   <div class="lc-chat">
     <div class="chat-topbar" id="chat-topbar">
-      <div class="mobile-back-btn" id="btn-mobile-back"><i class="bi bi-arrow-left"></i></div>
       <div class="ci-av" id="topbar-av" style="width:38px;height:38px;font-size:18px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;color:#fff;"></div>
       <div class="ct-info">
         <div class="ct-name" id="topbar-name">—</div>
@@ -346,7 +356,7 @@
       </div>
       <div class="ct-actions">
         <div class="nav-icon-btn" id="btn-topbar-search" title="Search in conversation"><i class="bi bi-search"></i></div>
-        <div class="nav-icon-btn" title="Info"><i class="bi bi-info-circle"></i></div>
+        <div class="nav-icon-btn" id="btn-conv-info" title="Info"><i class="bi bi-info-circle"></i></div>
       </div>
     </div>
 
@@ -468,6 +478,126 @@
   </div>
 </div>
 
+<!-- PROFILE MODAL -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">My Profile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div id="profile-av-display" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px;border:2px solid var(--lc-gold);"></div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" id="profile-av-picker">
+            <div class="avatar-opt" data-av="👨🏾‍🎓" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👨🏾‍🎓</div>
+            <div class="avatar-opt" data-av="👩🏾‍🎓" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👩🏾‍🎓</div>
+            <div class="avatar-opt" data-av="🧑🏾‍💻" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">🧑🏾‍💻</div>
+            <div class="avatar-opt" data-av="👨🏾‍🔬" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👨🏾‍🔬</div>
+            <div class="avatar-opt" data-av="👩🏾‍🏫" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👩🏾‍🏫</div>
+            <div class="avatar-opt" data-av="🧑🏾‍⚖️" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">🧑🏾‍⚖️</div>
+            <div class="avatar-opt" data-av="👨🏾‍🎨" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👨🏾‍🎨</div>
+            <div class="avatar-opt" data-av="🧑🏾‍🚀" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">🧑🏾‍🚀</div>
+          </div>
+        </div>
+        <div id="profile-error" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;color:#fca5a5;font-size:13px;padding:10px 14px;margin-bottom:16px;display:none;"></div>
+        <div id="profile-success" style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:10px;color:#4ade80;font-size:13px;padding:10px 14px;margin-bottom:16px;display:none;"></div>
+        <div class="mb-3">
+          <label class="lc-label">Display Name</label>
+          <input type="text" class="form-control lc-input" id="profile-name" placeholder="Your display name">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="mb-3">
+          <div>
+            <label class="lc-label">Faculty</label>
+            <select class="form-control lc-input" id="profile-faculty" onchange="profilePopulateDept()">
+              <option value="">— Select —</option>
+              <option>Management Sciences</option><option>Science</option><option>Engineering</option>
+              <option>Law</option><option>Arts</option><option>Education</option>
+              <option>Social Sciences</option><option>COLERM</option><option>Basic Medical Sciences</option>
+            </select>
+          </div>
+          <div>
+            <label class="lc-label">Level</label>
+            <select class="form-control lc-input" id="profile-level">
+              <option value="">— Select —</option>
+              <option>100 Level</option><option>200 Level</option><option>300 Level</option>
+              <option>400 Level</option><option>500 Level</option><option>Postgraduate</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="lc-label">Department</label>
+          <select class="form-control lc-input" id="profile-dept"><option value="">— Select faculty first —</option></select>
+        </div>
+        <div style="background:var(--lc-surface2);border:1px solid var(--lc-border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+          <div style="font-size:11px;color:var(--lc-muted2);margin-bottom:4px;">LASU Mail</div>
+          <div style="font-size:13.5px;color:var(--lc-muted);" id="profile-email-display">—</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-lc-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-lc" id="btn-save-profile">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div style="font-size:11px;color:var(--lc-muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Account</div>
+        <div class="pm-row" style="border-radius:9px;background:var(--lc-surface2);margin-bottom:6px;" id="settings-edit-profile"><i class="bi bi-person-circle"></i> Edit Profile</div>
+        <div class="pm-row" style="border-radius:9px;background:var(--lc-surface2);margin-bottom:6px;"><i class="bi bi-key"></i> Change Password <span style="font-size:11px;color:var(--lc-muted2);margin-left:auto;">Coming soon</span></div>
+        <div style="font-size:11px;color:var(--lc-muted2);letter-spacing:1px;text-transform:uppercase;margin:16px 0 10px;">About</div>
+        <div style="background:var(--lc-surface2);border-radius:9px;padding:12px 14px;">
+          <div style="font-size:13px;color:var(--lc-muted);margin-bottom:4px;">LASU Connect Beta</div>
+          <div style="font-size:11px;color:var(--lc-muted2);">An independent student-built messaging platform for Lagos State University students. Not officially affiliated with Lagos State University.</div>
+        </div>
+        <div class="pm-sep" style="margin:16px 0;"></div>
+        <div class="pm-row danger" style="border-radius:9px;" id="settings-signout"><i class="bi bi-box-arrow-right"></i> Sign Out</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERSATION INFO PANEL -->
+<div id="conv-info-panel" style="position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--lc-surface);border-left:1px solid var(--lc-border);z-index:400;transition:right 0.25s ease;overflow-y:auto;display:flex;flex-direction:column;">
+  <div style="padding:16px;border-bottom:1px solid var(--lc-border);display:flex;align-items:center;gap:10px;">
+    <div class="nav-icon-btn" id="btn-close-conv-info"><i class="bi bi-x"></i></div>
+    <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;" id="conv-info-title">Info</span>
+  </div>
+  <div style="padding:20px;text-align:center;border-bottom:1px solid var(--lc-border);">
+    <div id="conv-info-av" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px;"></div>
+    <div style="font-size:16px;font-weight:600;" id="conv-info-name">—</div>
+    <div style="font-size:12px;color:var(--lc-muted2);margin-top:4px;" id="conv-info-sub">—</div>
+  </div>
+  <div style="padding:16px;" id="conv-info-body"></div>
+  <div style="padding:16px;border-top:1px solid var(--lc-border);margin-top:auto;" id="conv-info-actions"></div>
+</div>
+<div id="conv-info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:399;" onclick="closeConvInfo()"></div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <div class="mbn-item active" id="mbn-messages" onclick="mbnSwitch('messages')">
+    <i class="bi bi-chat-dots-fill"></i><span>Messages</span>
+  </div>
+  <div class="mbn-item" id="mbn-channels" onclick="mbnSwitch('channels')">
+    <i class="bi bi-building"></i><span>Channels</span>
+  </div>
+  <div class="mbn-item" id="mbn-groups" onclick="mbnSwitch('groups')">
+    <i class="bi bi-people"></i><span>Groups</span>
+  </div>
+  <div class="mbn-item" id="mbn-events" onclick="mbnSwitch('events')">
+    <i class="bi bi-calendar-event"></i><span>Events</span>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="api.js"></script>
@@ -524,7 +654,6 @@
   }
   document.getElementById('btn-mobile-menu').addEventListener('click', openSidebar);
   document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
-  document.getElementById('btn-mobile-back').addEventListener('click', openSidebar);
 
   // SOCKET
   function connectSocket() {
@@ -647,9 +776,11 @@ el.innerHTML = '<div class="ci-av-wrap"><div class="ci-av ' + (isDM?'':'group') 
     }
   }
 
+  let _activeConvData = null;
   async function openConvo(convId, conv) {
     // Close sidebar on mobile when opening a conversation
     closeSidebar();
+    _activeConvData = conv;
     const convItem = document.querySelector('[data-conv-id="'+convId+'"]');
 if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) badge.remove(); }
     activeConvId = convId;
@@ -1277,6 +1408,159 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
     }
     setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, duration);
   }
+
+  // MOBILE BOTTOM NAV
+  function mbnSwitch(section) {
+    document.querySelectorAll('.mbn-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('mbn-' + section)?.classList.add('active');
+    if (section === 'messages') {
+      openSidebar();
+    } else {
+      const labels = { channels: 'Campus Channels', groups: 'Campus Groups', events: 'Events' };
+      showToast('🚧 ' + (labels[section] || section) + ' coming soon!', null, null, 2000);
+    }
+  }
+
+  // PROFILE MODAL
+  const deptMapProfile = {
+    'Management Sciences':['Project Management','Accounting','Business Administration','Banking & Finance','Marketing','Insurance'],
+    'Science':['Computer Science','Mathematics','Physics','Chemistry','Biology','Biochemistry'],
+    'Engineering':['Civil Engineering','Electrical Engineering','Mechanical Engineering','Computer Engineering'],
+    'Law':['Law'],
+    'Arts':['English','History','Philosophy','Theatre Arts','Music','Yoruba'],
+    'Education':['Adult Education','Educational Management','Science Education','Arts Education'],
+    'Social Sciences':['Economics','Sociology','Political Science','Mass Communication','Psychology'],
+    'COLERM':['Urban & Regional Planning','Estate Management','Building','Quantity Surveying'],
+    'Basic Medical Sciences':['Medicine & Surgery','Pharmacy','Nursing','Medical Laboratory Science'],
+  };
+  function profilePopulateDept() {
+    const faculty = document.getElementById('profile-faculty').value;
+    const dept = document.getElementById('profile-dept');
+    dept.innerHTML = '<option value="">— Select Department —</option>';
+    (deptMapProfile[faculty]||[]).forEach(d => { const o=document.createElement('option');o.textContent=d;dept.appendChild(o); });
+  }
+  function selectProfileAv(el) {
+    document.querySelectorAll('.avatar-opt').forEach(a => { a.style.borderColor='transparent';a.style.background='none'; });
+    el.style.borderColor='var(--lc-gold)';el.style.background='rgba(255,215,0,0.1)';
+    document.getElementById('profile-av-display').textContent = el.dataset.av;
+  }
+  function openProfileModal() {
+    const user = Auth.getUser();
+    if (!user) return;
+    document.getElementById('profile-name').value = user.displayName||'';
+    document.getElementById('profile-email-display').textContent = user.email||'';
+    document.getElementById('profile-av-display').textContent = user.avatar||'👨🏾‍🎓';
+    const facSelect = document.getElementById('profile-faculty');
+    facSelect.value = user.faculty||'';
+    profilePopulateDept();
+    setTimeout(() => { document.getElementById('profile-dept').value = user.department||''; }, 50);
+    document.getElementById('profile-level').value = user.level||'';
+    document.querySelectorAll('.avatar-opt').forEach(a => {
+      a.style.borderColor='transparent';a.style.background='none';
+      if (a.dataset.av===user.avatar){a.style.borderColor='var(--lc-gold)';a.style.background='rgba(255,215,0,0.1)';}
+    });
+    document.getElementById('profile-error').style.display='none';
+    document.getElementById('profile-success').style.display='none';
+    document.getElementById('profile-menu').classList.remove('open');
+    const m = bootstrap.Modal.getInstance(document.getElementById('profileModal'))||new bootstrap.Modal(document.getElementById('profileModal'));
+    m.show();
+  }
+  document.getElementById('btn-save-profile').addEventListener('click', async () => {
+    const name=document.getElementById('profile-name').value.trim();
+    const faculty=document.getElementById('profile-faculty').value;
+    const dept=document.getElementById('profile-dept').value;
+    const level=document.getElementById('profile-level').value;
+    const avatar=document.getElementById('profile-av-display').textContent;
+    const errEl=document.getElementById('profile-error');
+    const sucEl=document.getElementById('profile-success');
+    errEl.style.display='none';sucEl.style.display='none';
+    if (!name){errEl.textContent='Display name is required.';errEl.style.display='block';return;}
+    const btn=document.getElementById('btn-save-profile');
+    btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Saving…';
+    try {
+      const data=await api('/users/profile',{method:'PATCH',body:{displayName:name,faculty,department:dept,level,avatar}});
+      Auth.save(Auth.getToken(),data.user);
+      const ini=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      document.getElementById('nav-av').textContent=ini;
+      document.getElementById('nav-name').textContent=name.split(' ')[0];
+      document.getElementById('pm-name').textContent=name;
+      sucEl.textContent='✓ Profile updated!';sucEl.style.display='block';
+      setTimeout(()=>bootstrap.Modal.getInstance(document.getElementById('profileModal'))?.hide(),1500);
+    } catch(err){errEl.textContent=err.message;errEl.style.display='block';}
+    finally{btn.disabled=false;btn.innerHTML='Save Changes';}
+  });
+  document.getElementById('btn-my-profile').addEventListener('click', openProfileModal);
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    document.getElementById('profile-menu').classList.remove('open');
+    const m=bootstrap.Modal.getInstance(document.getElementById('settingsModal'))||new bootstrap.Modal(document.getElementById('settingsModal'));
+    m.show();
+  });
+  document.getElementById('settings-edit-profile').addEventListener('click', () => {
+    bootstrap.Modal.getInstance(document.getElementById('settingsModal'))?.hide();
+    setTimeout(openProfileModal,300);
+  });
+  document.getElementById('settings-signout').addEventListener('click', () => {
+    socket?.disconnect();Auth.clear();window.location.href='login.html';
+  });
+
+  // CONVERSATION INFO PANEL
+  function openConvInfo() {
+    if (!activeConvId||!_activeConvData) return;
+    const conv=_activeConvData;
+    const isDM=conv.type==='dm';
+    const other=isDM?(conv.members?.find(m=>m._id!==ME?._id)||conv.members?.[0]):null;
+    const name=isDM?(other?.displayName||'Unknown'):(conv.name||'Group');
+    const avatar=isDM?(other?.avatar||'👤'):(conv.icon||'💬');
+    document.getElementById('conv-info-av').textContent=avatar;
+    document.getElementById('conv-info-av').style.borderRadius=isDM?'50%':'12px';
+    document.getElementById('conv-info-name').textContent=name;
+    document.getElementById('conv-info-title').textContent=isDM?'Contact Info':'Group Info';
+    const subEl=document.getElementById('conv-info-sub');
+    const bodyEl=document.getElementById('conv-info-body');
+    const actionsEl=document.getElementById('conv-info-actions');
+    if (isDM) {
+      subEl.textContent=other?.isOnline?'● Online':'Last seen '+formatLastSeen(other?.lastSeen);
+      bodyEl.innerHTML=`<div style="background:var(--lc-surface2);border-radius:10px;padding:12px 14px;margin-bottom:10px;"><div style="font-size:10px;color:var(--lc-muted2);margin-bottom:4px;">FACULTY</div><div style="font-size:13px;">${escapeHtml(other?.faculty||'—')}</div></div><div style="background:var(--lc-surface2);border-radius:10px;padding:12px 14px;margin-bottom:10px;"><div style="font-size:10px;color:var(--lc-muted2);margin-bottom:4px;">DEPARTMENT</div><div style="font-size:13px;">${escapeHtml(other?.department||'—')}</div></div><div style="background:var(--lc-surface2);border-radius:10px;padding:12px 14px;"><div style="font-size:10px;color:var(--lc-muted2);margin-bottom:4px;">LEVEL</div><div style="font-size:13px;">${escapeHtml(other?.level||'—')}</div></div>`;
+      actionsEl.innerHTML=`<button onclick="blockUser('${other?._id}')" style="width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:9px;color:#ef4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="bi bi-slash-circle"></i> Block User</button>`;
+    } else {
+      subEl.textContent=(conv.members?.length||0)+' members';
+      const membersHtml=(conv.members||[]).map(m=>{
+        const isMe=m._id===ME?._id;
+        const ini=m.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'?';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lc-border);"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${m.avatar||ini}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">${escapeHtml(m.displayName||'Unknown')}${isMe?' <span style="font-size:10px;color:var(--lc-muted2);">(you)</span>':''}</div><div style="font-size:11px;color:var(--lc-muted2);">${escapeHtml(m.department||'')}</div></div>${m.isOnline?'<div style="width:8px;height:8px;border-radius:50%;background:var(--lc-online);flex-shrink:0;"></div>':''}</div>`;
+      }).join('');
+      bodyEl.innerHTML=`<div style="font-size:10px;color:var(--lc-muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Members</div>${membersHtml}`;
+      actionsEl.innerHTML=`<button onclick="leaveGroup('${conv._id}')" style="width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:9px;color:#ef4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="bi bi-box-arrow-left"></i> Leave Group</button>`;
+    }
+    document.getElementById('conv-info-panel').style.right='0';
+    document.getElementById('conv-info-overlay').style.display='block';
+  }
+  function closeConvInfo() {
+    document.getElementById('conv-info-panel').style.right='-320px';
+    document.getElementById('conv-info-overlay').style.display='none';
+  }
+  async function leaveGroup(convId) {
+    if (!confirm('Are you sure you want to leave this group?')) return;
+    try {
+      await api('/conversations/'+convId+'/leave',{method:'POST'});
+      closeConvInfo();
+      allConvos=allConvos.filter(c=>c._id!==convId);
+      renderList(allConvos);
+      activeConvId=null;_activeConvData=null;
+      document.getElementById('chat-topbar').classList.remove('visible');
+      document.getElementById('no-conv-state').style.display='flex';
+      document.getElementById('msgs').style.display='none';
+      document.getElementById('input-area').classList.remove('visible');
+      showToast('You left the group.',null,null,2000);
+    } catch(err){alert('Could not leave group: '+err.message);}
+  }
+  async function blockUser(userId) {
+    if (!confirm('Block this user?')) return;
+    showToast('🚧 Block feature coming soon!',null,null,2000);
+    closeConvInfo();
+  }
+  document.getElementById('btn-conv-info').addEventListener('click', openConvInfo);
+  document.getElementById('btn-close-conv-info').addEventListener('click', closeConvInfo);
 
   // KEEP RENDER ALIVE — ping every 8 minutes
   setInterval(() => {

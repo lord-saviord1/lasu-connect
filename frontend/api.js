@@ -15,6 +15,11 @@
 const API_BASE  = 'https://lasu-connect.onrender.com/api';
 const SOCKET_URL = 'https://lasu-connect.onrender.com';
 
+
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE  = IS_LOCAL ? 'http://localhost:5000/api' : 'https://lasu-connect.onrender.com/api';
+const SOCKET_URL = IS_LOCAL ? 'http://localhost:5000' : 'https://lasu-connect.onrender.com';
+
 // ─────────────────────────────────────────────────────────────
 // Auth helpers — token + user persisted in localStorage
 // ─────────────────────────────────────────────────────────────
