@@ -246,22 +246,22 @@
     .mobile-back-btn{display:none}
     .lc-rail{display:none}
     .mobile-bottom-nav{display:flex}
+    body{padding-bottom:56px}
     .lc-sidebar{position:fixed;top:54px;left:0;bottom:56px;width:85vw;max-width:320px;z-index:200;transform:translateX(-100%);transition:transform 0.25s ease;box-shadow:4px 0 24px rgba(0,0,0,.5)}
     .lc-sidebar.open{transform:translateX(0)}
     .lc-chat{width:100%;flex:1}
-    body{padding-bottom:56px}
     .msg-col{max-width:82%}
     .input-area{position:sticky;bottom:0;background:var(--lc-surface);z-index:50}
     .lc-brand-name{font-size:15px}
     .lc-brand-tag{display:none}
     .profile-menu{right:8px;width:calc(100vw - 16px);max-width:280px;top:58px}
     .emoji-tray{bottom:136px;left:8px;right:8px;transform:none;max-width:none}
+    .msg-toast{bottom:146px}
+    .scroll-btn{bottom:136px}
     .ctx-menu{min-width:200px}
     .modal-dialog{margin:8px}
     .messages-wrap{padding:12px 10px}
     .chat-topbar{padding:0 10px;gap:8px}
-    .msg-toast{bottom:146px}
-    .scroll-btn{bottom:136px}
   }
   @media(max-width:380px){
     .msg-col{max-width:88%}
@@ -489,7 +489,7 @@
       <div class="modal-body p-4">
         <div style="text-align:center;margin-bottom:20px;">
           <div id="profile-av-display" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px;border:2px solid var(--lc-gold);"></div>
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" id="profile-av-picker">
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
             <div class="avatar-opt" data-av="👨🏾‍🎓" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👨🏾‍🎓</div>
             <div class="avatar-opt" data-av="👩🏾‍🎓" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">👩🏾‍🎓</div>
             <div class="avatar-opt" data-av="🧑🏾‍💻" onclick="selectProfileAv(this)" style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid transparent;transition:all .15s;">🧑🏾‍💻</div>
@@ -529,7 +529,7 @@
           <label class="lc-label">Department</label>
           <select class="form-control lc-input" id="profile-dept"><option value="">— Select faculty first —</option></select>
         </div>
-        <div style="background:var(--lc-surface2);border:1px solid var(--lc-border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+        <div style="background:var(--lc-surface2);border:1px solid var(--lc-border);border-radius:10px;padding:12px 14px;">
           <div style="font-size:11px;color:var(--lc-muted2);margin-bottom:4px;">LASU Mail</div>
           <div style="font-size:13.5px;color:var(--lc-muted);" id="profile-email-display">—</div>
         </div>
@@ -778,7 +778,6 @@ el.innerHTML = '<div class="ci-av-wrap"><div class="ci-av ' + (isDM?'':'group') 
 
   let _activeConvData = null;
   async function openConvo(convId, conv) {
-    // Close sidebar on mobile when opening a conversation
     closeSidebar();
     _activeConvData = conv;
     const convItem = document.querySelector('[data-conv-id="'+convId+'"]');
@@ -1417,7 +1416,7 @@ if (convItem) { const badge = convItem.querySelector('.ci-unread'); if (badge) b
       openSidebar();
     } else {
       const labels = { channels: 'Campus Channels', groups: 'Campus Groups', events: 'Events' };
-      showToast('🚧 ' + (labels[section] || section) + ' coming soon!', null, null, 2000);
+      showToast('🚧 ' + (labels[section]||section) + ' coming soon!', null, null, 2000);
     }
   }
 
