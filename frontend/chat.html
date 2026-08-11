@@ -943,7 +943,7 @@ row.dataset.msgId = msg._id;
         (rs ? '<div style="color:var(--lc-gold);font-weight:600;margin-bottom:1px;">' + escapeHtml(rs) + '</div>' : '') +
         '<div style="color:var(--lc-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;opacity:0.8;">' + escapeHtml(rc.substring(0,60)) + '</div></div>';
     }
-    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine && !isGrouped ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + renderBubbleContent(msg) + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
+    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine && !isGrouped ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + replyHtml + renderBubbleContent(msg) + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
 row.addEventListener('contextmenu', showCtx);
 msgs.insertBefore(row, typing);
 if (!skipScroll) scrollToBottom();
