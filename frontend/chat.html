@@ -46,6 +46,7 @@
 html{overflow-x:hidden;height:100%}body{height:100vh;height:100dvh;overflow:hidden;background:var(--lc-dark);color:var(--lc-text);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;max-width:100vw}
 /* NAVBAR */
 .lc-navbar{height:54px;background:var(--lc-surface);border-bottom:1px solid var(--lc-border);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:100;width:100%;box-sizing:border-box}
+.nav-avatar-mobile{display:none;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--lc-blue),var(--lc-green));align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0;border:2px solid var(--lc-border)}
 .lc-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
 .lc-brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));border-radius:9px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,215,0,0.2)}
 .lc-brand-icon span{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--lc-gold)}
@@ -249,7 +250,7 @@ MOBILE RESPONSIVE — hamburger, drawer sidebar, back button
   .mobile-bottom-nav .mbn-item span{font-size:9px;font-weight:500}
   /* Input expand button */
   .input-expand-btn{display:none;width:32px;height:32px;border-radius:50%;background:var(--lc-surface2);border:1px solid var(--lc-border);color:var(--lc-muted);align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0}
-  .input-tools-wrap{display:flex;align-items:center;gap:4px;overflow:hidden;transition:max-width .2s,opacity .2s;max-width:80px;opacity:1}
+  .input-tools-wrap{display:flex;align-items:center;gap:4px;overflow:hidden;transition:max-width .25s ease,opacity .25s ease;max-width:80px;opacity:1}
   .input-tools-wrap.collapsed{max-width:0;opacity:0;pointer-events:none}
 
   @media(max-width:768px){
@@ -269,8 +270,10 @@ body{padding-bottom:56px}
 .lc-chat{width:100%;flex:1}
 .msg-col{max-width:82%}
 .input-area{position:sticky;bottom:0;background:var(--lc-surface);z-index:50}
-.lc-brand-name{font-size:15px}
+.lc-brand{display:none}
 .lc-brand-tag{display:none}
+.user-chip{display:none}
+.nav-avatar-mobile{display:flex}
 .profile-menu{right:8px;width:calc(100vw - 16px);max-width:280px;top:58px}
 .emoji-tray{bottom:136px;left:8px;right:8px;transform:none;max-width:none}
 .msg-toast{bottom:146px}
@@ -319,6 +322,7 @@ body{padding-bottom:56px}
 <i class="bi bi-chevron-down" style="font-size:10px;color:var(--lc-muted2);"></i>
 </div>
 </div>
+<div class="nav-avatar-mobile" id="btn-mobile-avatar" id="nav-av-mobile">?</div>
 </nav>
 
 <div class="profile-menu" id="profile-menu">
@@ -441,7 +445,7 @@ body{padding-bottom:56px}
 <div class="ctx-menu" id="ctx-menu">
 <div class="ctx-row" id="ctx-reply"><i class="bi bi-reply"></i>Reply</div>
 <div class="ctx-row" id="ctx-react"><i class="bi bi-emoji-smile"></i>React</div>
-<div id="ctx-react-tray" style="display:none;padding:6px 10px;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--lc-border);"></div>
+<div id="ctx-react-tray" style="display:none;padding:6px 10px;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--lc-border);max-width:240px;"></div>
 <div class="ctx-row" id="ctx-copy"><i class="bi bi-clipboard"></i>Copy</div>
 <div class="ctx-sep"></div>
 <div class="ctx-row danger" id="ctx-delete"><i class="bi bi-trash"></i>Delete</div>
@@ -1199,16 +1203,30 @@ document.getElementById('ctx-menu').classList.remove('open');
 }
 
 function ctxReact() {
-const tray = document.getElementById('ctx-react-tray');
-if (!tray) return;
-const emojis = ['❤️','😂','🔥','👍🏾','😮','😢','🙏🏾','💯'];
-tray.innerHTML = emojis.map(e => '<span style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;" onclick="sendReaction(\'' + e + '\')">' + e + '</span>').join('');
-tray.style.display = tray.style.display === 'flex' ? 'none' : 'flex';
-}
+    const tray = document.getElementById('ctx-react-tray');
+    if (!tray) return;
+    const emojis = ['❤️','😂','🔥','👍🏾','😮','😢','🙏🏾','💯'];
+    tray.innerHTML = '';
+    emojis.forEach(e => {
+      const sp = document.createElement('span');
+      sp.textContent = e;
+      sp.style.cssText = 'font-size:22px;cursor:pointer;padding:6px;border-radius:8px;display:inline-block;';
+      sp.onclick = () => sendReaction(e);
+      tray.appendChild(sp);
+    });
+    tray.style.display = tray.style.display === 'flex' ? 'none' : 'flex';
+  }
 
 function sendReaction(emoji) {
-if (!_ctxRow || !activeConvId) return;
-socket?.emit('react', { messageId: _ctxRow.dataset.msgId, emoji, conversationId: activeConvId });
+    if (!_ctxRow || !activeConvId) return;
+    const messageId = _ctxRow.dataset.msgId;
+    if (socket && messageId) {
+      socket.emit('react', { messageId, emoji, conversationId: activeConvId });
+    }
+    document.getElementById('ctx-menu').classList.remove('open');
+    const tray = document.getElementById('ctx-react-tray');
+    if (tray) tray.style.display = 'none';
+  });
 document.getElementById('ctx-menu').classList.remove('open');
 document.getElementById('ctx-react-tray').style.display = 'none';
 }
