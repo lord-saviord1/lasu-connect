@@ -322,7 +322,7 @@ body{padding-bottom:56px}
 <i class="bi bi-chevron-down" style="font-size:10px;color:var(--lc-muted2);"></i>
 </div>
 </div>
-<div class="nav-avatar-mobile" id="btn-mobile-avatar" id="nav-av-mobile">?</div>
+<div class="nav-avatar-mobile" id="btn-mobile-avatar-nav">?</div>
 </nav>
 
 <div class="profile-menu" id="profile-menu">
@@ -1207,11 +1207,11 @@ function ctxReact() {
     if (!tray) return;
     const emojis = ['❤️','😂','🔥','👍🏾','😮','😢','🙏🏾','💯'];
     tray.innerHTML = '';
-    emojis.forEach(e => {
+    emojis.forEach(function(e) {
       const sp = document.createElement('span');
       sp.textContent = e;
       sp.style.cssText = 'font-size:22px;cursor:pointer;padding:6px;border-radius:8px;display:inline-block;';
-      sp.onclick = () => sendReaction(e);
+      sp.onclick = function() { sendReaction(e); };
       tray.appendChild(sp);
     });
     tray.style.display = tray.style.display === 'flex' ? 'none' : 'flex';
