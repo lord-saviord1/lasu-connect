@@ -627,9 +627,7 @@ body{padding-bottom:56px}
 <script src="api.js"></script>
 <script>
 requireAuth();
-let _cachedUser = null;
-const getMe = () => { if (!_cachedUser) _cachedUser = Auth.getUser(); return _cachedUser; };
-const ME = getMe();
+const ME = Auth.getUser();
 let activeConvId = null;
 let socket = null;
 let typingTimer = null;
@@ -644,6 +642,8 @@ let _micOn = false;
 if (ME) {
 const ini = ME.displayName.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
 document.getElementById('nav-av').textContent = ini;
+    const mobileAv = document.getElementById('btn-mobile-avatar-nav');
+    if (mobileAv) mobileAv.textContent = ini;
 document.getElementById('nav-name').textContent = ME.displayName.split(' ')[0];
 document.getElementById('pm-name').textContent = ME.displayName;
 document.getElementById('pm-email').textContent = ME.email;
