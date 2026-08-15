@@ -1226,12 +1226,9 @@ function sendReaction(emoji) {
     document.getElementById('ctx-menu').classList.remove('open');
     const tray = document.getElementById('ctx-react-tray');
     if (tray) tray.style.display = 'none';
-  });
-document.getElementById('ctx-menu').classList.remove('open');
-document.getElementById('ctx-react-tray').style.display = 'none';
-}
+  }
 
-function ctxCopy() {
+  function ctxCopy() {
 if (!_ctxRow) return;
 const text = _ctxRow.querySelector('.msg-bubble')?.textContent.trim() || '';
 navigator.clipboard.writeText(text).then(() => {
