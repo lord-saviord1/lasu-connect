@@ -288,6 +288,9 @@ body{padding-bottom:56px}
 .msg-bubble{font-size:13px;padding:7px 11px}
 .lc-navbar{padding:0 10px;gap:8px}
 }
+.role-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase}
+.role-admin{background:rgba(255,215,0,0.15);color:var(--lc-gold);border:1px solid rgba(255,215,0,0.3)}
+.role-member{background:var(--lc-green-soft);color:var(--lc-green-mid);border:1px solid rgba(0,102,51,0.3)}
 /* SCROLL TO BOTTOM BUTTON */
 .scroll-btn{position:absolute;bottom:80px;right:18px;width:36px;height:36px;border-radius:50%;background:var(--lc-green-mid);border:none;color:#fff;font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:50;transition:all .15s}
 .scroll-btn.visible{display:flex}
@@ -619,6 +622,25 @@ body{padding-bottom:56px}
 </div>
 </div>
 
+<!-- ADD MEMBER MODAL -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Member</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <label class="lc-label">Search for a student</label>
+        <input type="text" class="form-control lc-input" id="add-member-search" placeholder="Name or matric number…">
+        <div id="add-member-results" class="search-results mt-2">
+          <div class="search-empty">Start typing to find a student</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="api.js"></script>
@@ -627,6 +649,9 @@ requireAuth();
 const ME = Auth.getUser();
 let activeConvId = null;
 let socket = null;
+let _msgPage = 1;
+let _msgLoading = false;
+let _msgHasMore = true;
 let typingTimer = null;
 let currentFilter = 'all';
 let allConvos = [];
@@ -738,7 +763,13 @@ socket.on('messageRead', ({ messageId }) => {
 const tick = document.querySelector('.msg-tick[data-msg-id="' + messageId + '"]');
 if (tick) tick.classList.add('read');
 });
-socket.on('reactionUpdate', ({ messageId, reactions }) => {
+    // Added to a new group
+    socket.on('addedToGroup', ({ conversationId, addedBy }) => {
+      showToast('👋 ' + addedBy + ' added you to a group!', null, null, 4000);
+      loadConversations(); // Refresh sidebar to show new group
+    });
+
+    socket.on('reactionUpdate', ({ messageId, reactions }) => {
       try {
         const msgRow = document.querySelector('[data-msg-id="' + messageId + '"]');
         if (!msgRow) return;
@@ -856,20 +887,24 @@ document.getElementById('typing-row').classList.remove('visible');
 }
 
 async function loadMessages(convId) {
-_lastMsgSender = null;
-_lastMsgTime = null;
-const msgs = document.getElementById('msgs');
-const typing = document.getElementById('typing-row');
-msgs.innerHTML = '';
-msgs.appendChild(typing);
-const loader = document.createElement('div');
-loader.className = 'msgs-empty';
-loader.innerHTML = '<div class="spinner-border" style="color:var(--lc-green-mid);width:24px;height:24px;border-width:2px;"></div><p>Loading…</p>';
-msgs.insertBefore(loader, typing);
-try {
-const data = await api('/messages/' + convId);
+    _lastMsgSender = null;
+    _lastMsgTime = null;
+    _msgPage = 1;
+    _msgHasMore = true;
+    _msgLoading = false;
+    const msgs = document.getElementById('msgs');
+    const typing = document.getElementById('typing-row');
+    msgs.innerHTML = '';
+    msgs.appendChild(typing);
+    const loader = document.createElement('div');
+    loader.className = 'msgs-empty';
+    loader.innerHTML = '<div class="spinner-border" style="color:var(--lc-green-mid);width:24px;height:24px;border-width:2px;"></div><p>Loading…</p>';
+    msgs.insertBefore(loader, typing);
+    try {
+    const data = await api('/messages/' + convId + '?page=1&limit=40');
 loader.remove();
-if (!data.messages || data.messages.length === 0) {
+_msgHasMore = data.messages && data.messages.length >= 40;
+    if (!data.messages || data.messages.length === 0) {
 const empty = document.createElement('div');
 empty.className = 'msgs-empty';
 empty.innerHTML = '<span>👋</span><p>No messages yet.<br>Say hello!</p>';
@@ -1467,8 +1502,10 @@ document.getElementById('scroll-btn')?.classList.remove('visible');
 });
 document.getElementById('msgs')?.addEventListener('scroll', function() {
 const isNearBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 80;
-if (isNearBottom) document.getElementById('scroll-btn')?.classList.remove('visible');
-});
+    if (isNearBottom) document.getElementById('scroll-btn')?.classList.remove('visible');
+    // Load more when near top
+    if (this.scrollTop < 80) loadMoreMessages();
+  });
 
 // TOAST NOTIFICATION
 function showToast(message, convId, conv, duration = 4000) {
@@ -1604,10 +1641,13 @@ subEl.textContent=(conv.members?.length||0)+' members';
 const membersHtml=(conv.members||[]).map(m=>{
 const isMe=m._id===ME?._id;
 const ini=m.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'?';
-return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lc-border);"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${m.avatar||ini}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">${escapeHtml(m.displayName||'Unknown')}${isMe?' <span style="font-size:10px;color:var(--lc-muted2);">(you)</span>':''}</div><div style="font-size:11px;color:var(--lc-muted2);">${escapeHtml(m.department||'')}</div></div>${m.isOnline?'<div style="width:8px;height:8px;border-radius:50%;background:var(--lc-online);flex-shrink:0;"></div>':''}</div>`;
+const isAdminMember = conv.admins?.map(String).includes(String(m._id));
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lc-border);"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${m.avatar||ini}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;">${escapeHtml(m.displayName||'Unknown')}${isMe?'<span style="font-size:10px;color:var(--lc-muted2);">(you)</span>':''}<span class="role-badge ${isAdminMember?'role-admin':'role-member'}">${isAdminMember?'Admin':'Member'}</span></div><div style="font-size:11px;color:var(--lc-muted2);">${escapeHtml(m.department||'')}</div></div>${m.isOnline?'<div style="width:8px;height:8px;border-radius:50%;background:var(--lc-online);flex-shrink:0;"></div>':''}</div>`;
 }).join('');
 bodyEl.innerHTML=`<div style="font-size:10px;color:var(--lc-muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Members</div>${membersHtml}`;
-actionsEl.innerHTML=`<button onclick="leaveGroup('${conv._id}')" style="width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:9px;color:#ef4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="bi bi-box-arrow-left"></i> Leave Group</button>`;
+actionsEl.innerHTML=`
+        ${conv.admins?.map(String).includes(String(ME?._id)) ? '<button onclick="openAddMember(\''+conv._id+'\')" style="width:100%;padding:10px;background:var(--lc-green-soft);border:1px solid rgba(0,102,51,0.3);border-radius:9px;color:var(--lc-green-mid);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;"><i class=\"bi bi-person-plus\"></i> Add Member</button>' : ''}
+        <button onclick="leaveGroup('${conv._id}')" style="width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:9px;color:#ef4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="bi bi-box-arrow-left"></i> Leave Group</button>`;
 }
 document.getElementById('conv-info-panel').style.right='0';
 document.getElementById('conv-info-overlay').style.display='block';
@@ -1616,6 +1656,52 @@ function closeConvInfo() {
 document.getElementById('conv-info-panel').style.right='-320px';
 document.getElementById('conv-info-overlay').style.display='none';
 }
+  let _addMemberConvId = null;
+  let _addMemberTimer = null;
+
+  function openAddMember(convId) {
+    _addMemberConvId = convId;
+    document.getElementById('add-member-search').value = '';
+    document.getElementById('add-member-results').innerHTML = '<div class="search-empty">Start typing to find a student</div>';
+    const m = bootstrap.Modal.getInstance(document.getElementById('addMemberModal')) || new bootstrap.Modal(document.getElementById('addMemberModal'));
+    m.show();
+    setTimeout(() => document.getElementById('add-member-search')?.focus(), 400);
+  }
+
+  document.getElementById('add-member-search')?.addEventListener('input', function() {
+    const q = this.value.trim();
+    const results = document.getElementById('add-member-results');
+    clearTimeout(_addMemberTimer);
+    if (q.length < 2) { results.innerHTML = '<div class="search-empty">Type at least 2 characters</div>'; return; }
+    results.innerHTML = '<div class="search-loading"><div class="spinner-border spinner-border-sm" style="color:var(--lc-green-mid);"></div> Searching…</div>';
+    _addMemberTimer = setTimeout(async () => {
+      try {
+        const data = await api('/users/search?q=' + encodeURIComponent(q));
+        if (!data.users || data.users.length === 0) { results.innerHTML = '<div class="search-empty">No students found</div>'; return; }
+        results.innerHTML = '';
+        data.users.forEach(user => {
+          const ini = user.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() || '?';
+          const el = document.createElement('div');
+          el.className = 'search-result-item';
+          el.innerHTML = '<div class="sr-av">' + (user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + ' · ' + escapeHtml(user.level||'') + '</div></div><i class="bi bi-person-plus" style="color:var(--lc-green-mid);font-size:16px;"></i>';
+          el.addEventListener('click', () => addMemberToGroup(user));
+          results.appendChild(el);
+        });
+      } catch(e) { results.innerHTML = '<div class="search-empty">Error: ' + e.message + '</div>'; }
+    }, 400);
+  });
+
+  async function addMemberToGroup(user) {
+    if (!_addMemberConvId) return;
+    try {
+      await api('/conversations/' + _addMemberConvId + '/members', { method: 'POST', body: { userId: user._id } });
+      bootstrap.Modal.getInstance(document.getElementById('addMemberModal'))?.hide();
+      showToast('✓ ' + user.displayName + ' added!', null, null, 2500);
+      const updated = await api('/conversations/' + _addMemberConvId);
+      if (updated.conversation) { _activeConvData = updated.conversation; openConvInfo(); }
+    } catch(e) { showToast('❌ ' + e.message, null, null, 3000); }
+  }
+
 async function leaveGroup(convId) {
 if (!confirm('Are you sure you want to leave this group?')) return;
 try {
