@@ -138,6 +138,58 @@ router.post('/:id/members', async (req, res) => {
   }
 });
 
+// ── Add this route to backend/routes/conversations.js ──
+// POST /api/conversations/:id/members
+// Only admins can add members to a group
+
+router.post('/:id/members', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ success: false, message: 'userId is required.' });
+
+    const convo = await Conversation.findOne({ _id: req.params.id, members: req.user._id });
+    if (!convo) return res.status(404).json({ success: false, message: 'Conversation not found.' });
+    if (convo.type !== 'group') return res.status(400).json({ success: false, message: 'Can only add members to group conversations.' });
+
+    // Only admins can add members
+    const isAdmin = convo.admins.map(String).includes(String(req.user._id));
+    if (!isAdmin) return res.status(403).json({ success: false, message: 'Only admins can add members.' });
+
+    // Check user exists and is verified
+    const userToAdd = await User.findOne({ _id: userId, isVerified: true });
+    if (!userToAdd) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    // Check not already a member
+    if (convo.members.map(String).includes(String(userId))) {
+      return res.status(400).json({ success: false, message: 'User is already a member.' });
+    }
+
+    // Add to members
+    convo.members.push(userId);
+    await convo.save();
+
+    // Notify via socket
+    const io = req.app.get('io');
+    if (io) {
+      const { onlineUsers } = require('../socket');
+      const userSocketId = onlineUsers.get(String(userId));
+      if (userSocketId) {
+        const userSocket = io.sockets.sockets.get(userSocketId);
+        if (userSocket) userSocket.join(String(convo._id));
+        io.to(userSocketId).emit('addedToGroup', { conversationId: convo._id, addedBy: req.user.displayName });
+      }
+    }
+
+    const populated = await Conversation.findById(convo._id)
+      .populate('members', 'displayName avatar isOnline lastSeen department level')
+      .populate('admins', 'displayName');
+
+    res.json({ success: true, conversation: populated });
+  } catch (err) {
+    console.error('Add member error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
 
 // POST /api/conversations/:id/leave
 router.post('/:id/leave', async (req, res) => {
