@@ -3,6 +3,7 @@ const router       = express.Router();
 const Conversation = require('../models/Conversation');
 const Message      = require('../models/Message');
 const { protect }  = require('../middleware/auth');
+const User         = require('../models/User');
 
 router.use(protect);
 
