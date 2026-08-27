@@ -19,7 +19,7 @@ function buildAccounts() {
 }
 
 const accounts = buildAccounts();
-let _roundRobinIndex = 1;
+let _roundRobinIndex = 0;
 
 function getNextAccount() {
   const account = accounts[_roundRobinIndex % accounts.length];
