@@ -87,6 +87,17 @@ const globalLimiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api', globalLimiter);
+// Development-only debug route to inspect the client IP and X-Forwarded-For header.
+// Remove this after verifying that trust proxy and headers work as expected.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/debug-ip', (req, res) => {
+    res.json({
+      ip: req.ip,
+      xForwardedFor: req.headers['x-forwarded-for'] || null,
+      trustProxy: app.get('trust proxy'),
+    });
+  });
+}
 
 // ── Health check ──
 app.get('/health', (req, res) => {
