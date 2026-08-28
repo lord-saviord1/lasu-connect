@@ -3,8 +3,8 @@ import Event from '../models/Event.js';
 import Ticket from '../models/Ticket.js';
 import { requireAuth } from '../middleware/auth.js'; // assumes existing customer auth middleware
 import { requireEventOrganizer } from '../middleware/eventPermissions.js';
-import { generateTicketQR } from '../services/qrService.js';
-import { sendTicketEmail } from '../services/ticketMailer.js';
+import { generateTicketQR } from '../utils/qrService.js';
+import { sendTicketEmail } from '../utils/ticketMailer.js';
 
 const router = express.Router();
 
