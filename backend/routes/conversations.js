@@ -120,29 +120,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // ── POST /api/conversations/:id/members ───────────────────
-router.post('/:id/members', async (req, res) => {
-  try {
-    const { userIds } = req.body;
-    const convo = await Conversation.findById(req.params.id);
-    if (!convo) return res.status(404).json({ success: false, message: 'Conversation not found.' });
-    if (!convo.admins.includes(req.user._id)) {
-      return res.status(403).json({ success: false, message: 'Only admins can add members.' });
-    }
-
-    const newMembers = userIds.filter(id => !convo.members.map(String).includes(id));
-    convo.members.push(...newMembers);
-    await convo.save();
-
-    res.json({ success: true, message: `${newMembers.length} member(s) added.` });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error.' });
-  }
-});
-
-// ── Add this route to backend/routes/conversations.js ──
-// POST /api/conversations/:id/members
 // Only admins can add members to a group
-
 router.post('/:id/members', async (req, res) => {
   try {
     const { userId } = req.body;
