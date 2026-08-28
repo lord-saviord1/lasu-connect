@@ -44,6 +44,11 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
 
 // ── Express app ──
 const app = express();
+// Trust proxy: when running behind a reverse proxy (Render, Heroku, nginx),
+// Express must be configured to trust the X-Forwarded-* headers so that
+// req.ip and express-rate-limit correctly identify the client IP.
+// Use an environment variable to allow overriding in different deployments.
+app.set('trust proxy', process.env.TRUST_PROXY || 1);
 const server = http.createServer(app);
 
 // ── Socket.io ──
