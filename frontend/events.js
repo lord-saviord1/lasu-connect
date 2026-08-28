@@ -1,13 +1,6 @@
-// Respect shared API config if present (frontend/api.js). If api.js isn't loaded
-// on the page, fall back to same-origin "/api".
-const API_BASE = (typeof window.API_BASE !== 'undefined') ? window.API_BASE : "/api";
-
-// Prefer the central Auth helper if available (api.js). Otherwise fall back to
-// reading the legacy localStorage key (default "lc_token"). This keeps the
-// pages working whether or not frontend/api.js was included.
-const token = (typeof Auth !== 'undefined' && typeof Auth.getToken === 'function')
-  ? Auth.getToken()
-  : localStorage.getItem((typeof Auth !== 'undefined' && Auth.TOKEN_KEY) ? Auth.TOKEN_KEY : "lc_token");
+// Uses the real shared api.js — same Auth.getToken()/API_BASE pattern as
+// chat.html. This file must be loaded AFTER <script src="api.js">.
+const token = Auth.getToken();
 
 const eventList = document.getElementById("eventList");
 const emptyState = document.getElementById("emptyState");
