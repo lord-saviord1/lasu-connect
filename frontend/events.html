@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Events — LASU Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="events.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a href="chat.html" class="back-link">← Back</a>
+  <h1 class="logo">Events</h1>
+  <button id="createEventBtn" class="ghost-btn hidden">+ Create</button>
+</header>
+
+<main class="container">
+
+  <section id="eventList" class="ticket-grid">
+    <!-- ticket cards injected here -->
+  </section>
+
+  <p id="emptyState" class="empty-state hidden">
+    Nothing on the calendar yet. Check back soon, or if you organize for a
+    society or department, create the first one.
+  </p>
+
+</main>
+
+<!-- Event detail / claim modal -->
+<div id="eventModal" class="modal hidden">
+  <div class="modal-box">
+    <button id="closeModal" class="close-btn">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- My tickets drawer -->
+<button id="myTicketsBtn" class="fab">My Tickets</button>
+<div id="ticketsDrawer" class="drawer hidden">
+  <div class="drawer-head">
+    <span>My Tickets</span>
+    <button id="closeDrawer" class="close-btn">✕</button>
+  </div>
+  <div id="ticketsList" class="tickets-list"></div>
+</div>
+
+<!-- Create event form (organizer) -->
+<div id="createModal" class="modal hidden">
+  <div class="modal-box">
+    <button id="closeCreateModal" class="close-btn">✕</button>
+    <h2>Create Event</h2>
+    <form id="createEventForm">
+      <input type="text" id="ev-title" placeholder="Event title" required />
+      <textarea id="ev-description" placeholder="Description" rows="3"></textarea>
+      <label class="field-label">Date & time</label>
+      <input type="datetime-local" id="ev-startsAt" required />
+      <input type="text" id="ev-venue" placeholder="Venue" required />
+      <input type="number" id="ev-capacity" placeholder="Capacity" required min="1" />
+      <label class="toggle-row">
+        <input type="checkbox" id="ev-isPaid" />
+        <span>This is a paid event</span>
+      </label>
+      <input type="number" id="ev-price" placeholder="Price (₦)" class="hidden" />
+      <button type="submit" class="primary-btn">Publish Event</button>
+      <p id="createMsg" class="msg"></p>
+    </form>
+  </div>
+</div>
+
+<script src="events.js"></script>
+</body>
+</html>

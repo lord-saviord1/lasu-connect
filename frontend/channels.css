@@ -1,0 +1,151 @@
+:root {
+  --bg: #0B0F0E;
+  --panel: #121816;
+  --border: #1E2926;
+  --text: #F2F5F3;
+  --muted: #8FA39B;
+  --primary: #006633;
+  --primary-bright: #00A651;
+  --gold: #FFD700;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+.hidden { display: none !important; }
+
+/* ---- Topbar ---- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 10;
+}
+.back-link {
+  color: var(--muted); text-decoration: none; font-size: 13px;
+  background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.back-link:hover { color: var(--gold); }
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; margin: 0; }
+
+/* ---- Layout ---- */
+.layout { display: flex; max-width: 1100px; margin: 0 auto; }
+
+.sidebar {
+  width: 200px; flex-shrink: 0; padding: 20px 12px;
+  border-right: 1px solid var(--border); min-height: calc(100vh - 60px);
+}
+.sidebar-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); margin-bottom: 10px; padding: 0 8px;
+}
+.pinned-list { display: flex; flex-direction: column; gap: 4px; }
+.pinned-item {
+  padding: 8px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text);
+}
+.pinned-item:hover { background: var(--panel); }
+.pinned-empty { font-size: 12px; color: var(--muted); padding: 0 8px; }
+
+.owner-filters { display: flex; flex-direction: column; gap: 2px; }
+.filter-chip {
+  background: none; border: none; text-align: left; color: var(--muted);
+  padding: 7px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.filter-chip:hover { background: var(--panel); }
+.filter-chip.active { background: var(--primary); color: white; font-weight: 600; }
+
+.discovery, .channel-space { flex: 1; padding: 20px; }
+
+/* ---- Channel nameplate cards: the signature element ----
+   Modeled on an actual campus noticeboard nameplate — a tag naming
+   who runs the space (SUG / FACULTY / DEPT / BRAND / ADMIN OFFICE /
+   STUDENT), because ownership type is the real organizing fact of a
+   channel, per the spec. */
+.channel-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+.channel-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
+  position: relative; padding-top: 34px;
+}
+.channel-card:hover { border-color: var(--primary-bright); transform: translateY(-2px); }
+
+.owner-nameplate {
+  position: absolute; top: 0; left: 16px;
+  background: var(--gold); color: #1A1400;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 0 0 4px 4px;
+}
+.owner-nameplate.sug { background: var(--gold); }
+.owner-nameplate.faculty { background: var(--primary-bright); color: #041; }
+.owner-nameplate.department { background: #4A9EFF; color: #04162E; }
+.owner-nameplate.brand { background: #E85D5D; color: #2E0A0A; }
+.owner-nameplate.admin_office { background: #C77DFF; color: #23032E; }
+.owner-nameplate.student { background: var(--muted); color: #0B0F0E; }
+
+.channel-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin: 0 0 4px; }
+.channel-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.channel-stats { font-size: 11px; color: var(--muted); }
+
+/* ---- Channel space ---- */
+.channel-header { margin-bottom: 16px; }
+#channelHeaderInfo { margin-top: 10px; }
+#channelHeaderInfo .channel-name { font-size: 22px; }
+
+.composer {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; margin-bottom: 16px;
+}
+.composer textarea {
+  width: 100%; background: #0E1613; border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif;
+  resize: vertical; margin-bottom: 8px;
+}
+.primary-btn {
+  background: var(--primary); border: none; border-radius: 8px; padding: 10px 18px;
+  color: white; font-weight: 700; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif;
+}
+.primary-btn:hover { background: var(--primary-bright); }
+
+.sort-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.sort-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  padding: 6px 14px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.sort-btn.active { border-color: var(--primary-bright); color: var(--primary-bright); }
+
+/* ---- Posts: Reddit-style upvote rail ---- */
+.posts-list { display: flex; flex-direction: column; gap: 10px; }
+.post-card {
+  display: flex; gap: 12px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+}
+.vote-rail {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  flex-shrink: 0; width: 32px;
+}
+.vote-arrow {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 16px; line-height: 1; padding: 2px;
+}
+.vote-arrow:hover, .vote-arrow.voted { color: var(--gold); }
+.vote-count { font-size: 13px; font-weight: 700; }
+
+.post-body { flex: 1; }
+.post-author { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.post-content { font-size: 14px; line-height: 1.5; }
+
+@media (max-width: 720px) {
+  .layout { flex-direction: column; }
+  .sidebar { width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+}

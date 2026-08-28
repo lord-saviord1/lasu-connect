@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Campus Channels — LASU Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="channels.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a href="chat.html" class="back-link">← Back</a>
+  <h1 class="logo">Campus Channels</h1>
+  <div></div>
+</header>
+
+<div class="layout">
+
+  <!-- Sidebar: pinned channels -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Pinned</div>
+    <div id="pinnedList" class="pinned-list"></div>
+    <div class="sidebar-title" style="margin-top:20px;">Browse</div>
+    <div id="ownerFilters" class="owner-filters">
+      <button class="filter-chip active" data-owner="">All</button>
+      <button class="filter-chip" data-owner="sug">SUG</button>
+      <button class="filter-chip" data-owner="faculty">Faculty</button>
+      <button class="filter-chip" data-owner="department">Dept</button>
+      <button class="filter-chip" data-owner="brand">Brand</button>
+      <button class="filter-chip" data-owner="admin_office">Admin</button>
+      <button class="filter-chip" data-owner="student">Student</button>
+    </div>
+  </aside>
+
+  <!-- Discovery grid -->
+  <main id="discoveryView" class="discovery">
+    <div id="channelGrid" class="channel-grid"></div>
+  </main>
+
+  <!-- Channel space (posts feed) -->
+  <main id="channelView" class="channel-space hidden">
+    <div class="channel-header">
+      <button id="backToDiscovery" class="back-link">← All channels</button>
+      <div id="channelHeaderInfo"></div>
+    </div>
+
+    <div class="composer">
+      <textarea id="postContent" placeholder="Post something to this channel..." rows="2"></textarea>
+      <button id="submitPost" class="primary-btn">Post</button>
+    </div>
+
+    <div class="sort-row">
+      <button class="sort-btn active" data-sort="top">Top</button>
+      <button class="sort-btn" data-sort="new">New</button>
+    </div>
+
+    <div id="postsList" class="posts-list"></div>
+  </main>
+
+</div>
+
+<script src="channels.js"></script>
+</body>
+</html>
