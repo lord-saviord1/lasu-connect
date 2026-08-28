@@ -1,5 +1,8 @@
 const API_BASE = "/api";
-const token = localStorage.getItem("lc_token");
+// Update TOKEN_KEY to match the key your login flow uses to store the JWT (e.g. "jwt" or "auth_token").
+// Default kept as "lc_token" — change if your authentication flow uses a different key.
+const TOKEN_KEY = "lc_token";
+const token = localStorage.getItem(TOKEN_KEY);
 
 const channelGrid = document.getElementById("channelGrid");
 const discoveryView = document.getElementById("discoveryView");
