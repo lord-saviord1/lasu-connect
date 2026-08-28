@@ -95,14 +95,33 @@ router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // Send OTP email
-    await sendOTPEmail(user.email, raw);
+    // Send OTP email — do not fail registration if email sending fails in development
+    try {
+      await sendOTPEmail(user.email, raw);
 
-    res.status(201).json({
-      success: true,
-      message: `Verification code sent to ${user.email}. Check your LASU Mail inbox.`,
-      email: user.email,
-    });
+      return res.status(201).json({
+        success: true,
+        message: `Verification code sent to ${user.email}. Check your LASU Mail inbox.`,
+        email: user.email,
+      });
+
+    } catch (mailErr) {
+      console.error('Failed to send OTP email:', mailErr);
+
+      if (process.env.NODE_ENV !== 'production') {
+        // In development/testing environments return the OTP so testers can continue
+        console.warn('Development mode: returning OTP in response for testing purposes. Do NOT enable in production.');
+        return res.status(201).json({
+          success: true,
+          message: `Verification code generated for ${user.email}. Email delivery failed in development.`,
+          email: user.email,
+          devOtp: raw,
+        });
+      }
+
+      // In production, surface a clear error to the client
+      return res.status(500).json({ success: false, message: 'Failed to send verification email. Please try again later.' });
+    }
 
   } catch (err) {
     console.error('Register error:', err);
