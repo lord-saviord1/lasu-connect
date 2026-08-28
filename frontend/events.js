@@ -1,9 +1,13 @@
-// Adjust to match wherever the rest of LASU Connect's frontend gets its
-// API base / token from — this assumes the same localStorage token key
-// pattern used elsewhere in the app. Change "lc_token" if the real key
-// differs.
-const API_BASE = "/api"; // same-origin; adjust if frontend/backend are on different domains
-const token = localStorage.getItem("lc_token");
+// Respect shared API config if present (frontend/api.js). If api.js isn't loaded
+// on the page, fall back to same-origin "/api".
+const API_BASE = (typeof window.API_BASE !== 'undefined') ? window.API_BASE : "/api";
+
+// Prefer the central Auth helper if available (api.js). Otherwise fall back to
+// reading the legacy localStorage key (default "lc_token"). This keeps the
+// pages working whether or not frontend/api.js was included.
+const token = (typeof Auth !== 'undefined' && typeof Auth.getToken === 'function')
+  ? Auth.getToken()
+  : localStorage.getItem((typeof Auth !== 'undefined' && Auth.TOKEN_KEY) ? Auth.TOKEN_KEY : "lc_token");
 
 const eventList = document.getElementById("eventList");
 const emptyState = document.getElementById("emptyState");
