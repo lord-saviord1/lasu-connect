@@ -736,8 +736,8 @@
 
     // ── Email validation ──
     function validateEmail(input) {
-      const valid = input.value.endsWith('@lasu.edu.ng');
-      input.classList.toggle('valid', valid && input.value.length > 12);
+      const valid = input.value.endsWith('@st.lasu.edu.ng');
+      input.classList.toggle('valid', valid && input.value.length > 15);
       input.classList.toggle('invalid', !valid && input.value.length > 5);
     }
 
@@ -764,7 +764,7 @@
       const terms  = document.getElementById('terms-check').checked;
 
       hideError('step1-error');
-      if (!email.endsWith('@st.lasu.edu.ng')) return showError('step1-error', 'step1-msg', 'Please use your official LASU Mail (@lasu.edu.ng).');
+      if (!email.endsWith('@st.lasu.edu.ng')) return showError('step1-error', 'step1-msg', 'Please use your official LASU Mail (@st.lasu.edu.ng).');
       if (!matric) return showError('step1-error', 'step1-msg', 'Please enter your matric number.');
       if (pwd.length < 8) return showError('step1-error', 'step1-msg', 'Password must be at least 8 characters.');
       if (pwd !== pwd2) return showError('step1-error', 'step1-msg', 'Passwords do not match.');
