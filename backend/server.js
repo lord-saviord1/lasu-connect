@@ -1,3 +1,21 @@
+// Fail-fast checks for production environment
+if (process.env.NODE_ENV === 'production') {
+  const missing = [];
+  if (!process.env.MONGO_URI) missing.push('MONGO_URI');
+  if (!process.env.JWT_SECRET) missing.push('JWT_SECRET');
+
+  // Email config: either EMAIL_ACCOUNTS or EMAIL_USER+EMAIL_PASS
+  const hasEmailAccounts = !!process.env.EMAIL_ACCOUNTS;
+  const hasSingleEmail = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+  if (!hasEmailAccounts && !hasSingleEmail) missing.push('EMAIL_ACCOUNTS or EMAIL_USER+EMAIL_PASS');
+
+  if (missing.length > 0) {
+    console.error('Startup failed: missing required environment variables for production:', missing.join(', '));
+    console.error('Aborting startup to avoid running with incomplete configuration.');
+    process.exit(1);
+  }
+}
+
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
