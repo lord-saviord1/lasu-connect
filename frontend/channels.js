@@ -1,5 +1,8 @@
-// API_BASE comes from api.js, no need to redeclare
-const token = Auth.getToken(); // shared api.js Auth module
+// Uses the REAL shared api.js — api(path, options) where options is
+// { method, body, headers }. body is a plain object; api.js stringifies
+// it internally.
+
+requireAuth(); // same guard chat.html uses — redirects to login.html if not signed in
 
 const channelGrid = document.getElementById("channelGrid");
 const discoveryView = document.getElementById("discoveryView");
@@ -10,15 +13,6 @@ const pinnedList = document.getElementById("pinnedList");
 
 let currentChannel = null;
 let currentSort = "top";
-
-async function api(path, opts = {}) {
-  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-  return data;
-}
 
 const OWNER_LABELS = {
   sug: "SUG", faculty: "Faculty", department: "Dept",
@@ -33,13 +27,13 @@ async function loadChannels(ownerType = "") {
     const query = ownerType ? `?ownerType=${ownerType}` : "";
     const data = await api(`/channels${query}`);
     if (!data.channels.length) {
-      channelGrid.innerHTML = `<p style="color:var(--muted); font-size:13px;">No channels here yet.</p>`;
+      channelGrid.innerHTML = `<p style="color:var(--lc-muted); font-size:13px;">No channels here yet.</p>`;
       return;
     }
     channelGrid.innerHTML = "";
     data.channels.forEach((ch) => channelGrid.appendChild(renderChannelCard(ch)));
   } catch (err) {
-    channelGrid.innerHTML = `<p style="color:#E85D5D;">${err.message}</p>`;
+    channelGrid.innerHTML = `<p style="color:var(--lc-danger);">${err.message}</p>`;
   }
 }
 
@@ -56,9 +50,9 @@ function renderChannelCard(ch) {
   return card;
 }
 
-document.querySelectorAll(".filter-chip").forEach((btn) => {
+document.querySelectorAll('[data-owner]').forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-chip").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll('[data-owner]').forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     loadChannels(btn.dataset.owner);
   });
@@ -72,13 +66,11 @@ function openChannel(ch) {
   discoveryView.classList.add("hidden");
   channelView.classList.remove("hidden");
   channelHeaderInfo.innerHTML = `
-    <div class="owner-nameplate ${ch.ownerType}" style="position:static; display:inline-block; margin-bottom:6px;">
-      ${OWNER_LABELS[ch.ownerType] || ch.ownerType}
-    </div>
+    <div class="owner-nameplate ${ch.ownerType}">${OWNER_LABELS[ch.ownerType] || ch.ownerType}</div>
     <div class="channel-name">${ch.name}</div>
     <div class="channel-desc">${ch.description || ''}</div>
   `;
-  document.querySelectorAll(".sort-btn").forEach((b) => b.classList.toggle("active", b.dataset.sort === "top"));
+  document.querySelectorAll('[data-sort]').forEach((b) => b.classList.toggle("active", b.dataset.sort === "top"));
   loadPosts();
 }
 
@@ -88,9 +80,9 @@ document.getElementById("backToDiscovery").addEventListener("click", () => {
   currentChannel = null;
 });
 
-document.querySelectorAll(".sort-btn").forEach((btn) => {
+document.querySelectorAll('[data-sort]').forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".sort-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll('[data-sort]').forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     currentSort = btn.dataset.sort;
     loadPosts();
@@ -103,13 +95,13 @@ async function loadPosts() {
   try {
     const data = await api(`/channels/${currentChannel._id}/posts?sort=${currentSort}`);
     if (!data.posts.length) {
-      postsList.innerHTML = `<p style="color:var(--muted); font-size:13px;">No posts yet — be the first.</p>`;
+      postsList.innerHTML = `<p style="color:var(--lc-muted); font-size:13px;">No posts yet — be the first.</p>`;
       return;
     }
     postsList.innerHTML = "";
     data.posts.forEach((post) => postsList.appendChild(renderPost(post)));
   } catch (err) {
-    postsList.innerHTML = `<p style="color:#E85D5D;">${err.message}</p>`;
+    postsList.innerHTML = `<p style="color:var(--lc-danger);">${err.message}</p>`;
   }
 }
 
@@ -122,7 +114,7 @@ function renderPost(post) {
       <span class="vote-count">${post.upvoteCount || 0}</span>
     </div>
     <div class="post-body">
-      <div class="post-author">${post.author?.name || 'Unknown'}</div>
+      <div class="post-author">${post.author?.displayName || post.author?.fullName || 'Unknown'}</div>
       <div class="post-content">${post.content}</div>
     </div>
   `;
@@ -144,7 +136,7 @@ document.getElementById("submitPost").addEventListener("click", async () => {
   const content = textarea.value.trim();
   if (!content) return;
   try {
-    await api(`/channels/${currentChannel._id}/posts`, { method: "POST", body: JSON.stringify({ content }) });
+    await api(`/channels/${currentChannel._id}/posts`, { method: "POST", body: { content } });
     textarea.value = "";
     loadPosts();
   } catch (err) {
