@@ -714,6 +714,7 @@ reconnectionAttempts: 3,
 socket.on('connect', () => console.log('🟢 Socket connected'));
 socket.on('connect_error', e => console.warn('Socket error:', e.message));
 socket.on('newMessage', msg => {
+try {
 if (msg.conversationId === activeConvId) {
 appendMessage(msg, msg.sender._id === ME?._id);
 const msgsEl = document.getElementById('msgs');
@@ -733,20 +734,26 @@ const other = isDM ? fromConv?.members?.find(m => m._id !== ME?._id) : null;
 const convName = isDM ? (other?.displayName || 'Someone') : (fromConv?.name || 'A group');
 showToast('💬 ' + convName + ': ' + (msg.content || '').substring(0, 40), msg.conversationId, fromConv);
 }
+} catch(e) { console.error('newMessage handler error:', e); }
 });
 socket.on('userTyping', ({ displayName, conversationId }) => {
+try {
 if (conversationId !== activeConvId) return;
 const row = document.getElementById('typing-row');
 row.querySelector('.typing-label').textContent = displayName + ' is typing…';
 row.classList.add('visible');
+} catch(e) { console.error('userTyping handler error:', e); }
 });
 socket.on('userStoppedTyping', ({ conversationId }) => {
+try {
 if (conversationId !== activeConvId) return;
 document.getElementById('typing-row').classList.remove('visible');
+} catch(e) { console.error('userStoppedTyping handler error:', e); }
 });
-socket.on('userOnline', ({ userId }) => updatePresence(userId, true));
-socket.on('userOffline', ({ userId }) => updatePresence(userId, false));
+socket.on('userOnline', ({ userId }) => { try { updatePresence(userId, true); } catch(e) { console.error('userOnline handler error:', e); } });
+socket.on('userOffline', ({ userId }) => { try { updatePresence(userId, false); } catch(e) { console.error('userOffline handler error:', e); } });
 socket.on('conversationUpdated', ({ conversation }) => {
+try {
 if (!conversation) return;
 const exists = allConvos.find(c => c._id === conversation._id);
 if (!exists) {
@@ -758,15 +765,20 @@ allConvos.sort((a,b) => new Date(b.lastMessage?.timestamp||b.createdAt||0) - new
 }
 renderList(allConvos);
 if (activeConvId) document.querySelector('[data-conv-id="'+activeConvId+'"]')?.classList.add('active');
+} catch(e) { console.error('conversationUpdated handler error:', e); }
 });
 socket.on('messageRead', ({ messageId }) => {
+try {
 const tick = document.querySelector('.msg-tick[data-msg-id="' + messageId + '"]');
 if (tick) tick.classList.add('read');
+} catch(e) { console.error('messageRead handler error:', e); }
 });
     // Added to a new group
     socket.on('addedToGroup', ({ conversationId, addedBy }) => {
-      showToast('👋 ' + addedBy + ' added you to a group!', null, null, 4000);
-      loadConversations(); // Refresh sidebar to show new group
+      try {
+        showToast('👋 ' + addedBy + ' added you to a group!', null, null, 4000);
+        loadConversations(); // Refresh sidebar to show new group
+      } catch(e) { console.error('addedToGroup handler error:', e); }
     });
 
     socket.on('reactionUpdate', ({ messageId, reactions }) => {
@@ -794,11 +806,13 @@ if (tick) tick.classList.add('read');
       } catch(e) { console.error('reactionUpdate:', e); }
     });
     socket.on('messageDeleted', ({ messageId }) => {
+try {
 const row = document.querySelector('[data-msg-id="' + messageId + '"]');
 if (row) {
 const b = row.querySelector('.msg-bubble');
 if (b) { b.textContent = '🚫 Deleted'; b.style.opacity = '0.5'; }
 }
+} catch(e) { console.error('messageDeleted handler error:', e); }
 });
 }
 
