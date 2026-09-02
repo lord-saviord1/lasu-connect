@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const User    = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { addUserToDeptLevelGroup } = require('../utils/deptGroups');
 
 // All user routes require authentication
 router.use(protect);
@@ -64,6 +65,22 @@ router.patch('/profile', async (req, res) => {
     }
 
     const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true });
+
+    // Auto-join the student's department+level group once both fields
+    // are known. Safe to call repeatedly — addUserToDeptLevelGroup is
+    // idempotent, so re-saving a profile without changing dept/level
+    // won't create duplicates or double-add.
+    if (user.department && user.level) {
+      try {
+        await addUserToDeptLevelGroup(user._id, user.department, user.level);
+      } catch (groupErr) {
+        // Don't fail the whole profile update if group assignment has
+        // an issue — log it so it's visible, but the user's profile
+        // save should still succeed.
+        console.error('Department group auto-join failed:', groupErr);
+      }
+    }
+
     res.json({ success: true, user });
   } catch (err) {
     console.error('Profile update error:', err);
