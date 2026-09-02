@@ -1661,7 +1661,7 @@ const isAdminMember = conv.admins?.map(String).includes(String(m._id));
 bodyEl.innerHTML=`<div style="font-size:10px;color:var(--lc-muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Members</div>${membersHtml}`;
 actionsEl.innerHTML=`
         ${conv.admins?.map(String).includes(String(ME?._id)) ? '<button onclick="openAddMember(\''+conv._id+'\')" style="width:100%;padding:10px;background:var(--lc-green-soft);border:1px solid rgba(0,102,51,0.3);border-radius:9px;color:var(--lc-green-mid);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;"><i class=\"bi bi-person-plus\"></i> Add Member</button>' : ''}
-        <button onclick="leaveGroup('${conv._id}')" style="width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:9px;color:#ef4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="bi bi-box-arrow-left"></i> Leave Group</button>`;
+        ${conv.groupType === 'department_level' ? '<div style="font-size:11px;color:var(--lc-muted2);text-align:center;padding:8px 0;"><i class="bi bi-mortarboard"></i> This is your department group — you can\'t leave it.</div>' : '<button onclick="leaveGroup(\''+conv._id+'\')" style="width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:9px;color:#ef4444;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="bi bi-box-arrow-left"></i> Leave Group</button>'}`;
 }
 document.getElementById('conv-info-panel').style.right='0';
 document.getElementById('conv-info-overlay').style.display='block';
