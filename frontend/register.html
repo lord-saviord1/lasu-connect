@@ -659,15 +659,11 @@
           </div>
           <div>
             <label class="form-label-lc">Level</label>
-            <select class="form-control-lc" id="reg-level">
-              <option value="">— Select —</option>
-              <option>100 Level</option>
-              <option>200 Level</option>
-              <option>300 Level</option>
-              <option>400 Level</option>
-              <option>500 Level</option>
-              <option>Postgraduate</option>
-            </select>
+            <input type="text" class="form-control-lc" id="reg-level-display" disabled style="opacity:0.85;cursor:not-allowed;">
+            <input type="hidden" id="reg-level">
+            <div style="font-size:11px;color:var(--lc-muted);margin-top:4px;">
+              <i class="bi bi-info-circle"></i> Derived automatically from your matric number.
+            </div>
           </div>
         </div>
 
@@ -736,8 +732,8 @@
 
     // ── Email validation ──
     function validateEmail(input) {
-      const valid = input.value.endsWith('@st.lasu.edu.ng');
-      input.classList.toggle('valid', valid && input.value.length > 15);
+      const valid = input.value.endsWith('@lasu.edu.ng');
+      input.classList.toggle('valid', valid && input.value.length > 12);
       input.classList.toggle('invalid', !valid && input.value.length > 5);
     }
 
@@ -764,7 +760,7 @@
       const terms  = document.getElementById('terms-check').checked;
 
       hideError('step1-error');
-      if (!email.endsWith('@st.lasu.edu.ng')) return showError('step1-error', 'step1-msg', 'Please use your official LASU Mail (@st.lasu.edu.ng).');
+      if (!email.endsWith('@st.lasu.edu.ng')) return showError('step1-error', 'step1-msg', 'Please use your official LASU Mail (@lasu.edu.ng).');
       if (!matric) return showError('step1-error', 'step1-msg', 'Please enter your matric number.');
       if (pwd.length < 8) return showError('step1-error', 'step1-msg', 'Password must be at least 8 characters.');
       if (pwd !== pwd2) return showError('step1-error', 'step1-msg', 'Passwords do not match.');
@@ -874,6 +870,12 @@
         const s = document.getElementById('step2-success');
         s.querySelector('span').textContent = 'Email verified! Complete your profile.';
         s.classList.add('show');
+
+        // Derive and display Level from the matric number captured in step 1
+        const derivedLevel = deriveLevelFromMatric(window._regData?.matricNumber);
+        document.getElementById('reg-level').value = derivedLevel || '';
+        document.getElementById('reg-level-display').value = derivedLevel || 'Unable to determine — contact support';
+
         setTimeout(() => goToStep(3), 1000);
 
       } catch (err) {
@@ -896,6 +898,27 @@
       'COLERM': ['Urban & Regional Planning', 'Estate Management', 'Building', 'Quantity Surveying'],
       'Basic Medical Sciences': ['Medicine & Surgery', 'Pharmacy', 'Nursing', 'Medical Laboratory Science'],
     };
+    // ── Derive academic Level from matric number ──────────────────
+    // Mirrors backend/utils/matricLevel.js exactly — keep both in sync.
+    // LASU matric numbers encode admission year in the first 2 digits.
+    // Session runs Sept-Aug; level bumps up by one every Sept 1st.
+    function currentSessionStartYear(now = new Date()) {
+      const year = now.getFullYear();
+      const month = now.getMonth(); // 0-indexed; 8 = September
+      return month >= 8 ? year : year - 1;
+    }
+    function deriveLevelFromMatric(matricNumber, now = new Date()) {
+      if (!matricNumber) return null;
+      const yearPrefix = matricNumber.trim().slice(0, 2);
+      if (!/^\d{2}$/.test(yearPrefix)) return null;
+      const admissionYear = 2000 + parseInt(yearPrefix, 10);
+      const sessionStartYear = currentSessionStartYear(now);
+      const yearsIn = sessionStartYear - admissionYear + 1;
+      if (yearsIn <= 0) return null;
+      if (yearsIn > 5) return '500 Level / Extended';
+      return `${yearsIn * 100} Level`;
+    }
+
     function populateDept() {
       const faculty = document.getElementById('reg-faculty').value;
       const dept = document.getElementById('reg-dept');
@@ -924,7 +947,7 @@
       hideError('step3-error');
       if (!name)    return showError('step3-error', 'step3-msg', 'Please enter your display name.');
       if (!faculty) return showError('step3-error', 'step3-msg', 'Please select your faculty.');
-      if (!level)   return showError('step3-error', 'step3-msg', 'Please select your level.');
+      if (!level)   return showError('step3-error', 'step3-msg', 'Could not determine your level from your matric number. Please contact support.');
       if (!dept)    return showError('step3-error', 'step3-msg', 'Please select your department.');
 
       const btn = document.querySelector('#step-3 .btn-lc-primary');
