@@ -13,7 +13,8 @@ const conversationSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
   },
   faculty:     { type: String, default: null },
-  groupType:   { type: String, default: null },
+  department:  { type: String, default: null },
+  groupType:   { type: String, default: null }, // e.g. 'department_level' for auto-created groups
   isOfficial:  { type: Boolean, default: false },
 }, { timestamps: true });
 
@@ -29,5 +30,8 @@ conversationSchema.index({ type: 1, members: 1 });
 
 // Find official/faculty channels
 conversationSchema.index({ isOfficial: 1, faculty: 1 });
+
+// Find department+level auto-groups (lookup on every registration)
+conversationSchema.index({ groupType: 1, department: 1, level: 1 });
 
 module.exports = mongoose.model('Conversation', conversationSchema);
