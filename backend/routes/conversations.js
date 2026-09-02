@@ -176,6 +176,9 @@ router.post('/:id/leave', async (req, res) => {
     const convo = await Conversation.findOne({ _id: req.params.id, members: req.user._id });
     if (!convo) return res.status(404).json({ success: false, message: 'Conversation not found.' });
     if (convo.type !== 'group') return res.status(400).json({ success: false, message: 'You can only leave group conversations.' });
+    if (convo.groupType === 'department_level') {
+      return res.status(403).json({ success: false, message: 'You cannot leave your department group.' });
+    }
     convo.members = convo.members.filter(m => String(m) !== String(req.user._id));
     convo.admins  = convo.admins.filter(a => String(a) !== String(req.user._id));
     if (convo.members.length === 0) {
