@@ -69,4 +69,52 @@ async function addUserToDeptLevelGroup(userId, department, level) {
   return group;
 }
 
-module.exports = { getOrCreateDeptLevelGroup, addUserToDeptLevelGroup, deptLevelGroupName };
+/**
+ * Moves a user OUT of their current department+level group(s) and INTO
+ * the correct one for the given department/level. Used whenever a
+ * student's true department/level changes — either because their
+ * stored level was wrong and got corrected against their matric
+ * number, or because they genuinely transferred department.
+ *
+ * This intentionally bypasses the "can't leave your department group"
+ * rule that applies to the student-facing leave-group API route — that
+ * rule exists to stop a student unilaterally opting out of their own
+ * group, not to prevent the system from correcting group membership
+ * when the underlying department/level itself has changed.
+ *
+ * Removes the user from every OTHER department_level group they're
+ * currently in (there should normally be at most one, but this cleans
+ * up regardless), then adds them to the correct one. Idempotent — safe
+ * to call even if they're already correctly placed.
+ *
+ * Returns { newGroup, removedFromGroupIds }.
+ */
+async function reassignDeptLevelGroup(userId, correctDepartment, correctLevel) {
+  const correctGroup = await getOrCreateDeptLevelGroup(correctDepartment, correctLevel);
+
+  // Find every department_level group this user currently belongs to,
+  // other than the correct one, and remove them.
+  const staleGroups = await Conversation.find({
+    type: 'group',
+    groupType: 'department_level',
+    members: userId,
+    _id: { $ne: correctGroup._id },
+  });
+
+  const removedFromGroupIds = [];
+  for (const stale of staleGroups) {
+    stale.members = stale.members.filter((m) => String(m) !== String(userId));
+    await stale.save();
+    removedFromGroupIds.push(stale._id);
+  }
+
+  const alreadyInCorrectGroup = correctGroup.members.some((m) => String(m) === String(userId));
+  if (!alreadyInCorrectGroup) {
+    correctGroup.members.push(userId);
+    await correctGroup.save();
+  }
+
+  return { newGroup: correctGroup, removedFromGroupIds };
+}
+
+module.exports = { getOrCreateDeptLevelGroup, addUserToDeptLevelGroup, reassignDeptLevelGroup, deptLevelGroupName };
