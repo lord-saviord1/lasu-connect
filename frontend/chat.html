@@ -673,8 +673,13 @@ document.getElementById('pm-email').textContent = ME.email;
 
 // HELPERS
 function escapeHtml(str) {
-if (!str) return '';
-return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+if (str === null || str === undefined || str === '') return '';
+return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// Links and media must be https. Anything else (e.g. javascript:) becomes a dead link.
+function safeUrl(u) {
+const s = String(u || '');
+return /^https:\/\//i.test(s) ? s : '#';
 }
 function formatTime(ts) {
 if (!ts) return '';
@@ -852,7 +857,7 @@ const online = isDM && other?.isOnline;
 const el = document.createElement('div');
 el.className = 'chat-item';
 el.dataset.convId = c._id;
-el.innerHTML = '<div class="ci-av-wrap"><div class="ci-av ' + (isDM?'':'group') + '" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));">' + avatar + '</div>' + (online ? '<div class="ci-online"></div>' : '') + '</div><div class="ci-body"><div class="ci-row1"><span class="ci-name">' + escapeHtml(name) + '</span><span class="ci-time">' + time + '</span></div><div class="ci-row2"><span class="ci-preview">' + escapeHtml(preview) + '</span>' + (c.unreadCount > 0 ? '<span class="ci-unread">' + c.unreadCount + '</span>' : '') + '</div></div>';
+el.innerHTML = '<div class="ci-av-wrap"><div class="ci-av ' + (isDM?'':'group') + '" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));">' + escapeHtml(avatar) + '</div>' + (online ? '<div class="ci-online"></div>' : '') + '</div><div class="ci-body"><div class="ci-row1"><span class="ci-name">' + escapeHtml(name) + '</span><span class="ci-time">' + time + '</span></div><div class="ci-row2"><span class="ci-preview">' + escapeHtml(preview) + '</span>' + (c.unreadCount > 0 ? '<span class="ci-unread">' + c.unreadCount + '</span>' : '') + '</div></div>';
 el.addEventListener('click', () => openConvo(c._id, c));
 list.appendChild(el);
 });
@@ -953,15 +958,15 @@ return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 function renderBubbleContent(msg) {
 if (msg.type === 'image' && msg.fileUrl) {
 const caption = msg.content ? '<div style="margin-top:6px;">' + escapeHtml(msg.content) + '</div>' : '';
-return '<a href="' + escapeHtml(msg.fileUrl) + '" target="_blank" rel="noopener" style="display:block;">' +
-'<img src="' + escapeHtml(msg.fileUrl) + '" alt="Image" style="max-width:240px;max-height:280px;border-radius:10px;display:block;">' +
+return '<a href="' + escapeHtml(safeUrl(msg.fileUrl)) + '" target="_blank" rel="noopener" style="display:block;">' +
+'<img src="' + escapeHtml(safeUrl(msg.fileUrl)) + '" alt="Image" style="max-width:240px;max-height:280px;border-radius:10px;display:block;">' +
 '</a>' + caption;
 }
 if (msg.type === 'voice' && msg.fileUrl) {
-return '<audio controls src="' + escapeHtml(msg.fileUrl) + '" style="height:36px;max-width:220px;"></audio>';
+return '<audio controls src="' + escapeHtml(safeUrl(msg.fileUrl)) + '" style="height:36px;max-width:220px;"></audio>';
 }
 if (msg.type === 'file' && msg.fileUrl) {
-return '<a href="' + escapeHtml(msg.fileUrl) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none;">' +
+return '<a href="' + escapeHtml(safeUrl(msg.fileUrl)) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none;">' +
 '<i class="bi bi-file-earmark-arrow-down" style="font-size:22px;flex-shrink:0;"></i>' +
 '<div><div style="font-size:12.5px;font-weight:600;">' + escapeHtml(msg.fileName || 'File') + '</div>' +
 '<div style="font-size:10.5px;opacity:.75;">' + formatFileSize(msg.fileSize) + '</div></div></a>';
@@ -993,7 +998,7 @@ row.dataset.msgId = msg._id;
         (rs ? '<div style="color:var(--lc-gold);font-weight:600;margin-bottom:1px;">' + escapeHtml(rs) + '</div>' : '') +
         '<div style="color:var(--lc-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;opacity:0.8;">' + escapeHtml(rc.substring(0,60)) + '</div></div>';
     }
-    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + ini + '</div><div class="msg-col">' + (!isMine && !isGrouped ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + replyHtml + renderBubbleContent(msg) + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
+    row.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,var(--lc-green),var(--lc-blue));">' + escapeHtml(ini) + '</div><div class="msg-col">' + (!isMine && !isGrouped ? '<div class="msg-sender-name">' + escapeHtml(msg.sender.displayName||'') + '</div>' : '') + '<div class="msg-bubble ' + (isMine?'mine':'them') + '">' + replyHtml + renderBubbleContent(msg) + '</div><div class="msg-meta"><span class="msg-time">' + formatTime(msg.createdAt) + '</span>' + (isMine ? '<i class="bi bi-check2-all msg-tick" data-msg-id="' + msg._id + '"></i>' : '') + '</div></div>';
 row.addEventListener('contextmenu', showCtx);
 msgs.insertBefore(row, typing);
 if (!skipScroll) scrollToBottom();
@@ -1134,7 +1139,7 @@ data.users.forEach(user => {
 const ini = user.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() || '?';
 const el = document.createElement('div');
 el.className = 'search-result-item';
-el.innerHTML = '<div class="sr-av">' + (user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + ' · ' + escapeHtml(user.level||'') + '</div></div>' + (user.isOnline ? '<div class="sr-online"></div>' : '');
+el.innerHTML = '<div class="sr-av">' + escapeHtml(user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + ' · ' + escapeHtml(user.level||'') + '</div></div>' + (user.isOnline ? '<div class="sr-online"></div>' : '');
 el.addEventListener('click', () => startDM(user));
 results.appendChild(el);
 });
@@ -1167,7 +1172,7 @@ if (selectedMembers.find(m => m._id === user._id)) return;
 const ini = user.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'?';
 const el = document.createElement('div');
 el.className = 'search-result-item';
-el.innerHTML = '<div class="sr-av">' + (user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + '</div></div><i class="bi bi-plus-circle" style="color:var(--lc-green-mid);font-size:16px;"></i>';
+el.innerHTML = '<div class="sr-av">' + escapeHtml(user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + '</div></div><i class="bi bi-plus-circle" style="color:var(--lc-green-mid);font-size:16px;"></i>';
 el.addEventListener('click', () => addMember(user));
 results.appendChild(el);
 });
@@ -1591,6 +1596,10 @@ document.getElementById('profile-error').style.display='none';
 document.getElementById('profile-success').style.display='none';
 document.getElementById('profile-menu').classList.remove('open');
 const m = bootstrap.Modal.getInstance(document.getElementById('profileModal'))||new bootstrap.Modal(document.getElementById('profileModal'));
+['profile-faculty','profile-dept','profile-level'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) { el.disabled = true; el.style.opacity = '0.7'; el.style.cursor = 'not-allowed'; el.title = 'Set at registration — contact support to change'; }
+});
 m.show();
 }
 document.getElementById('btn-save-profile').addEventListener('click', async () => {
@@ -1606,7 +1615,7 @@ if (!name){errEl.textContent='Display name is required.';errEl.style.display='bl
 const btn=document.getElementById('btn-save-profile');
 btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Saving…';
 try {
-const data=await api('/users/profile',{method:'PATCH',body:{displayName:name,faculty,department:dept,level,avatar}});
+const data=await api('/users/profile',{method:'PATCH',body:{displayName:name,avatar}});
 Auth.save(Auth.getToken(),data.user);
 const ini=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
 document.getElementById('nav-av').textContent=ini;
@@ -1656,7 +1665,7 @@ const membersHtml=(conv.members||[]).map(m=>{
 const isMe=m._id===ME?._id;
 const ini=m.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()||'?';
 const isAdminMember = conv.admins?.map(String).includes(String(m._id));
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lc-border);"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${m.avatar||ini}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;">${escapeHtml(m.displayName||'Unknown')}${isMe?'<span style="font-size:10px;color:var(--lc-muted2);">(you)</span>':''}<span class="role-badge ${isAdminMember?'role-admin':'role-member'}">${isAdminMember?'Admin':'Member'}</span></div><div style="font-size:11px;color:var(--lc-muted2);">${escapeHtml(m.department||'')}</div></div>${m.isOnline?'<div style="width:8px;height:8px;border-radius:50%;background:var(--lc-online);flex-shrink:0;"></div>':''}</div>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lc-border);"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${escapeHtml(m.avatar||ini)}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;">${escapeHtml(m.displayName||'Unknown')}${isMe?'<span style="font-size:10px;color:var(--lc-muted2);">(you)</span>':''}<span class="role-badge ${isAdminMember?'role-admin':'role-member'}">${isAdminMember?'Admin':'Member'}</span></div><div style="font-size:11px;color:var(--lc-muted2);">${escapeHtml(m.department||'')}</div></div>${m.isOnline?'<div style="width:8px;height:8px;border-radius:50%;background:var(--lc-online);flex-shrink:0;"></div>':''}</div>`;
 }).join('');
 bodyEl.innerHTML=`<div style="font-size:10px;color:var(--lc-muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Members</div>${membersHtml}`;
 actionsEl.innerHTML=`
@@ -1697,7 +1706,7 @@ document.getElementById('conv-info-overlay').style.display='none';
           const ini = user.displayName?.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() || '?';
           const el = document.createElement('div');
           el.className = 'search-result-item';
-          el.innerHTML = '<div class="sr-av">' + (user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + ' · ' + escapeHtml(user.level||'') + '</div></div><i class="bi bi-person-plus" style="color:var(--lc-green-mid);font-size:16px;"></i>';
+          el.innerHTML = '<div class="sr-av">' + escapeHtml(user.avatar||ini) + '</div><div class="sr-info"><div class="sr-name">' + escapeHtml(user.displayName) + '</div><div class="sr-meta">' + escapeHtml(user.department||'') + ' · ' + escapeHtml(user.level||'') + '</div></div><i class="bi bi-person-plus" style="color:var(--lc-green-mid);font-size:16px;"></i>';
           el.addEventListener('click', () => addMemberToGroup(user));
           results.appendChild(el);
         });

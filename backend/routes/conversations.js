@@ -4,6 +4,7 @@ const Conversation = require('../models/Conversation');
 const Message      = require('../models/Message');
 const { protect }  = require('../middleware/auth');
 const User         = require('../models/User');
+const { isSafeAvatar } = require('../utils/validators');
 
 router.use(protect);
 
@@ -81,6 +82,12 @@ router.post('/group', async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Group name is required.' });
     }
+    if (name.trim().length > 50) {
+      return res.status(400).json({ success: false, message: 'Group name must be 50 characters or fewer.' });
+    }
+    if (icon !== undefined && !isSafeAvatar(icon)) {
+      return res.status(400).json({ success: false, message: 'Invalid group icon.' });
+    }
     if (!memberIds || memberIds.length < 1) {
       return res.status(400).json({ success: false, message: 'Add at least one other member.' });
     }
@@ -90,11 +97,12 @@ router.post('/group', async (req, res) => {
     const convo = await Conversation.create({
       type:      'group',
       name:      name.trim(),
-      icon:      icon || '💬',
+      icon:      icon ? icon.trim() : '💬',
       members,
       admins:    [req.user._id],
       faculty:   faculty || null,
-      groupType: groupType || null,
+      // 'department_level' is reserved for system-created groups.
+      groupType: (typeof groupType === 'string' && groupType !== 'department_level') ? groupType.slice(0, 40) : null,
     });
     await convo.populate('members', 'displayName avatar isOnline');
 

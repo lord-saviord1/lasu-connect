@@ -23,6 +23,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
 
 const connectDB = require('./config/db');
 const { initSocket } = require('./socket');
@@ -79,9 +80,23 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Many students share one campus IP, so limiting purely per-IP (it was
+// 200 requests / 15 min) would throttle everyone on the same wifi.
+// Signed-in requests are limited per USER; only anonymous traffic falls
+// back to per-IP.
+function rateLimitUserId(req) {
+  if (req._rlUser !== undefined) return req._rlUser;
+  req._rlUser = null;
+  const h = req.headers.authorization;
+  if (h && h.startsWith('Bearer ')) {
+    try { req._rlUser = jwt.verify(h.split(' ')[1], process.env.JWT_SECRET).id; } catch (e) { /* invalid token -> treated as anonymous */ }
+  }
+  return req._rlUser;
+}
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  limit: (req) => (rateLimitUserId(req) ? 600 : 300),
+  keyGenerator: (req) => (rateLimitUserId(req) ? 'u:' + rateLimitUserId(req) : 'ip:' + req.ip),
   message: { message: 'Too many requests. Please slow down.' },
   standardHeaders: true,
   legacyHeaders: false,

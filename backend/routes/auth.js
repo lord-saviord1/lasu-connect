@@ -8,6 +8,7 @@ const generateOTP   = require('../utils/generateOTP');
 const { sendOTPEmail } = require('../utils/mailer');
 const validateLasuMail = require('../middleware/lasuMail');
 const { protect }   = require('../middleware/auth');
+const { isSafeAvatar } = require('../utils/validators');
 
 // ── Helpers ──────────────────────────────────────────────
 const signToken = (id) =>
@@ -19,17 +20,49 @@ const sendTokenResponse = (user, statusCode, res) => {
 };
 
 // ── Rate limiters ─────────────────────────────────────────
-const authLimiter = rateLimit({
+// Campus networks put many students behind one IP, so a tight per-IP
+// limit would lock them out of each other's registrations. Each route
+// gets TWO limiters instead: a generous per-IP ceiling (abuse backstop)
+// and a strict per-email limit (protects individual accounts and OTPs).
+const emailKey = (req) =>
+  (req.body && typeof req.body.email === 'string' && req.body.email.trim())
+    ? req.body.email.toLowerCase().trim()
+    : 'no-email';
+
+const authIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts from this network. Try again in 15 minutes.' }
+});
+const authEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  keyGenerator: emailKey,
+  skipSuccessfulRequests: true, // only failed logins/registrations count
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' }
 });
+const authLimiter = [authIpLimiter, authEmailLimiter];
 
-const otpLimiter = rateLimit({
+const otpIpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 5,
+  limit: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many OTP requests from this network. Try again in 10 minutes.' }
+});
+const otpEmailLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 5,
+  keyGenerator: emailKey, // caps code-guessing and email sends per address
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many OTP requests. Try again in 10 minutes.' }
 });
+const otpLimiter = [otpIpLimiter, otpEmailLimiter];
 
 // ── POST /api/auth/register ───────────────────────────────
 router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
@@ -83,7 +116,7 @@ router.post('/register', authLimiter, validateLasuMail, async (req, res) => {
       faculty,
       department,
       level,
-      avatar:       avatar || '👨🏾‍🎓',
+      avatar:       isSafeAvatar(avatar) ? avatar.trim() : '👨🏾‍🎓',
       isVerified:   false,
     });
 

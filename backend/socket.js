@@ -30,6 +30,13 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+// A user may only act on conversations they belong to. Never trust a
+// conversationId sent by the client without checking this first.
+async function isMember(userId, conversationId) {
+  try { return !!(await Conversation.exists({ _id: conversationId, members: userId })); }
+  catch (e) { return false; } // malformed id
+}
+
 const initSocket = (io) => {
 
   io.use(async (socket, next) => {
@@ -71,6 +78,17 @@ const initSocket = (io) => {
 
       try {
         const { conversationId, content, type, replyTo, fileUrl, fileName, fileSize } = data;
+
+        // File links must point at our own Cloudinary uploads. Anything else
+        // (e.g. a javascript: URL) is rejected so it can never reach other users.
+        if (fileUrl) {
+          const prefix = process.env.CLOUDINARY_CLOUD_NAME
+            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`
+            : 'https://res.cloudinary.com/';
+          if (typeof fileUrl !== 'string' || !fileUrl.startsWith(prefix)) {
+            return callback?.({ error: 'Invalid file URL.' });
+          }
+        }
 
         // ── FIX: Membership check + single DB query ──
         const convo = await Conversation.findOne({ _id: conversationId, members: user._id })
@@ -165,7 +183,8 @@ const initSocket = (io) => {
     // ── Read Receipts ─────────────────────────────────
     socket.on('markRead', async ({ conversationId, messageId }) => {
       try {
-        await Message.findByIdAndUpdate(messageId, { $addToSet: { readBy: user._id } });
+        if (!(await isMember(user._id, conversationId))) return;
+        await Message.updateOne({ _id: messageId, conversationId }, { $addToSet: { readBy: user._id } });
         socket.to(conversationId).emit('messageRead', { userId: user._id, messageId });
       } catch (err) {
         console.error('markRead error:', err);
@@ -179,6 +198,7 @@ const initSocket = (io) => {
       try {
         const msg = await Message.findById(messageId);
         if (!msg) return;
+        if (!(await isMember(user._id, msg.conversationId))) return;
 
         const existing = msg.reactions.find(r => r.emoji === emoji);
         if (existing) {
@@ -197,7 +217,7 @@ const initSocket = (io) => {
 
         await msg.save();
         // Broadcast to all in room including sender so everyone sees the update
-        io.to(conversationId).emit('reactionUpdate', {
+        io.to(String(msg.conversationId)).emit('reactionUpdate', {
           messageId,
           reactions: msg.reactions,
           reactedBy: user._id,
@@ -212,6 +232,7 @@ const initSocket = (io) => {
       try {
         const msg = await Message.findById(messageId);
         if (!msg) return;
+        if (!(await isMember(user._id, msg.conversationId))) return;
 
         // ── Security: only sender can delete for all ──
         if (forAll && String(msg.sender) === String(user._id)) {
@@ -222,7 +243,7 @@ const initSocket = (io) => {
         }
 
         await msg.save();
-        io.to(conversationId).emit('messageDeleted', {
+        io.to(String(msg.conversationId)).emit('messageDeleted', {
           messageId,
           forAll: !!forAll,
           deletedBy: user._id,
@@ -237,6 +258,14 @@ const initSocket = (io) => {
       // Rate limit: max 10 votes per minute
       if (isRateLimited(String(user._id), 'votePoll', 10)) return;
       try {
+        // Verify the poll exists, the user is in its conversation, the vote
+        // is for a real option, and the poll is still open — BEFORE writing.
+        const pollMsg = await Message.findById(messageId).select('conversationId type poll');
+        if (!pollMsg || pollMsg.type !== 'poll') return;
+        if (!(await isMember(user._id, pollMsg.conversationId))) return;
+        if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= (pollMsg.poll?.options?.length || 0)) return;
+        if (pollMsg.poll.closesAt && new Date() > pollMsg.poll.closesAt) return;
+
         // ── FIX: Use $pull and $push instead of forEach filter ──
         await Message.updateOne(
           { _id: messageId },
@@ -251,15 +280,16 @@ const initSocket = (io) => {
         if (!msg || msg.type !== 'poll') return;
         if (msg.poll.closesAt && new Date() > msg.poll.closesAt) return;
 
-        io.to(conversationId).emit('pollUpdate', { messageId, poll: msg.poll });
+        io.to(String(pollMsg.conversationId)).emit('pollUpdate', { messageId, poll: msg.poll });
       } catch (err) {
         console.error('votePoll error:', err);
       }
     });
 
     // ── Join conversation room ─────────────────────────
-    socket.on('joinConversation', ({ conversationId }) => {
-      socket.join(conversationId);
+    socket.on('joinConversation', async ({ conversationId }) => {
+      // Only members may join a conversation's room (otherwise anyone could read it).
+      if (await isMember(user._id, conversationId)) socket.join(String(conversationId));
     });
 
     // ── Disconnect ────────────────────────────────────
