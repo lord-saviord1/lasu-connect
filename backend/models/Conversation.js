@@ -32,6 +32,12 @@ conversationSchema.index({ type: 1, members: 1 });
 conversationSchema.index({ isOfficial: 1, faculty: 1 });
 
 // Find department+level auto-groups (lookup on every registration)
-conversationSchema.index({ groupType: 1, department: 1, level: 1 });
+// One department group per department+level. Partial, so it only applies to the
+// auto-created groups. Enforced by the database, so two simultaneous requests
+// can never create duplicates.
+conversationSchema.index(
+  { groupType: 1, department: 1, level: 1 },
+  { unique: true, partialFilterExpression: { groupType: 'department_level' } }
+);
 
 module.exports = mongoose.model('Conversation', conversationSchema);
