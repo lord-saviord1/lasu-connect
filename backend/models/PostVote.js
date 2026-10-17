@@ -1,8 +1,7 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
-// Separate collection rather than an array on ChannelPost — keeps the
-// post document small and makes "did this user already vote" a fast
-// indexed lookup instead of scanning an array.
+// A separate collection (not an array on the post) keeps posts small and makes
+// "did this user already vote" an indexed lookup.
 const postVoteSchema = new mongoose.Schema(
   {
     post: { type: mongoose.Schema.Types.ObjectId, ref: 'ChannelPost', required: true },
@@ -13,4 +12,4 @@ const postVoteSchema = new mongoose.Schema(
 
 postVoteSchema.index({ post: 1, user: 1 }, { unique: true }); // one vote per user per post
 
-export default mongoose.models.PostVote || mongoose.model('PostVote', postVoteSchema);
+module.exports = mongoose.models.PostVote || mongoose.model('PostVote', postVoteSchema);

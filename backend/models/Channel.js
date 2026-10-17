@@ -1,18 +1,19 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 /**
- * v1 scope: channels exist, have admins, have posts, can be pinned.
- * Deliberately NOT in v1 (per the roadmap discussion): main-feed
- * qualification/notability logic, verification badges, boosting, the
- * Ad Center. Those depend on having real posting activity to design
- * against — same reasoning the product doc itself gives for deferring
- * Wallet/Rewards.
+ * A channel is a space run by an entity (SUG, a faculty, a brand, a school
+ * office, a student group) that posts to a following. Anyone can READ a
+ * channel, including people who aren't signed in; posting depends on the
+ * channel's postingMode.
+ *
+ * Not in v1 (by design, needs real usage data first): main feed,
+ * verification badges, boosting, the Ad Center.
  */
 const channelSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, unique: true },
-    slug: { type: String, required: true, unique: true, lowercase: true }, // URL-friendly, e.g. "sug", "computer-science-dept"
-    description: { type: String, default: '' },
+    name: { type: String, required: true, unique: true, trim: true, maxlength: 60 },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true }, // e.g. "lasusu-info"
+    description: { type: String, default: '', maxlength: 280 },
     coverImage: { type: String, default: '' },
 
     ownerType: {
@@ -21,27 +22,26 @@ const channelSchema = new mongoose.Schema(
       enum: ['sug', 'faculty', 'department', 'brand', 'admin_office', 'student'],
     },
 
-    // Scoped admin permissions per spec: an admin entry can be
-    // full-control, or limited to a specific purpose (e.g. "can only
-    // post about event X"). `scope: null` = full admin rights.
+    // 'admins': only this channel's admins can post (official voices: SUG, school
+    //           offices, brands, Project-NODE...).
+    // 'open'  : any signed-in student can post (faculty / department / community).
+    postingMode: { type: String, enum: ['admins', 'open'], default: 'admins' },
+
+    // An admin entry is full-control (scope null) or limited to one event.
     admins: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        scope: {
-          type: String,
-          enum: [null, 'event_only'],
-          default: null,
-        },
-        scopedEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // only set when scope === 'event_only'
+        scope: { type: String, enum: ['event_only'], default: null },
+        scopedEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // only when scope === 'event_only'
       },
     ],
 
-    followerCount: { type: Number, default: 0 }, // denormalized; see ChannelFollow model for the actual relationship
+    followerCount: { type: Number, default: 0 }, // denormalized; ChannelFollow holds the real relationship
 
-    // Channel creation is admin-gated per spec, not open to the public.
+    // Channel creation is team-gated, not open to the public.
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Channel || mongoose.model('Channel', channelSchema);
+module.exports = mongoose.models.Channel || mongoose.model('Channel', channelSchema);

@@ -34,6 +34,8 @@ const userRoutes = require('./routes/users');
 const conversationRoutes = require('./routes/conversations');
 const messageRoutes = require('./routes/messages');
 const uploadRoutes = require('./routes/upload');
+const channelRoutes = require('./routes/channelRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 
 // ── Connect to MongoDB ──
 connectDB();
@@ -129,6 +131,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/channels', channelRoutes);
+app.use('/api/events', eventRoutes);
 
 // ── 404 handler ──
 app.use((req, res) => {

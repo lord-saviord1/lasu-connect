@@ -1,24 +1,36 @@
-// Wire this into whatever Nodemailer/round-robin sender setup already
-// exists in LASU Connect's backend (per the OTP delivery pattern) rather
-// than duplicating a separate mail transport just for tickets.
-import User from '../models/User.js'; // adjust path to match actual location
+const User = require('../models/User');
+const { sendEmail } = require('./mailer');
 
-export async function sendTicketEmail({ userId, event, ticket, qrDataUrl }) {
-  const user = await User.findById(userId);
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+/**
+ * Emails a ticket (QR attached as a PNG). Best effort: the ticket also lives in
+ * the app under My Tickets, so a failed email never fails the claim.
+ */
+async function sendTicketEmail({ userId, event, ticket, qrPng }) {
+  const user = await User.findById(userId).select('email displayName');
   if (!user) return;
 
-  // Replace this with a call into the existing mail-sending utility —
-  // this function's job is just to build the right content, not to own
-  // its own transport.
-  const subject = `Your ticket for ${event.title}`;
-  const html = `
-    <h2>${event.title}</h2>
-    <p>${new Date(event.startsAt).toLocaleString()} — ${event.venue}</p>
-    <p>Show this QR code at the door:</p>
-    <img src="${qrDataUrl}" alt="Ticket QR code" width="300" />
-    <p style="font-size:12px;color:#888;">Ticket code: ${ticket.code}</p>
-  `;
+  const when = new Date(event.startsAt).toLocaleString('en-NG', {
+    dateStyle: 'full', timeStyle: 'short', timeZone: 'Africa/Lagos',
+  });
 
-  // await sendMail({ to: user.email, subject, html }); // ← plug in existing mailer here
-  console.log(`[ticketMailer] Would send ticket email to ${user.email} for event ${event.title}`);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2 style="color:#006633;margin-bottom:4px;">${esc(event.title)}</h2>
+      <p style="margin:0 0 12px;color:#444;">${esc(when)}<br/>${esc(event.venue)}</p>
+      <p>Hi ${esc(user.displayName)}, your ticket is attached as <b>ticket-qr.png</b>.
+         Show the QR code at the door. You can also open it any time in LASU Connect under Events, then My Tickets.</p>
+      <p style="font-size:12px;color:#888;">Ticket code: ${esc(ticket.code)}</p>
+    </div>`;
+
+  await sendEmail({
+    to: user.email,
+    subject: `Your ticket for ${event.title}`,
+    html,
+    attachments: [{ filename: 'ticket-qr.png', content: qrPng }],
+  });
 }
+
+module.exports = { sendTicketEmail };

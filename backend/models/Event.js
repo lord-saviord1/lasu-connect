@@ -1,32 +1,29 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 /**
- * v1 scope: single ticket type per event, free-or-paid toggle.
- * Multi-person ticket types (Couple's Ticket, group tickets) are a
- * deliberate v2 addition — see TicketType note below for how to extend
- * this without a breaking migration when that's ready.
+ * v1: single ticket type per event, FREE events only at launch. The isPaid /
+ * priceNaira fields exist so paid events can be switched on once a payment
+ * provider is wired in; the routes force them to free until then.
  */
 const eventSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String, default: '' },
-    coverImage: { type: String, default: '' }, // Cloudinary URL
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    description: { type: String, default: '', trim: true, maxlength: 2000 },
+    coverImage: { type: String, default: '' },
 
     startsAt: { type: Date, required: true },
     endsAt: { type: Date },
-    venue: { type: String, required: true },
+    venue: { type: String, required: true, trim: true, maxlength: 120 },
 
-    capacity: { type: Number, required: true }, // total tickets available
-    ticketsClaimed: { type: Number, default: 0 }, // denormalized counter, kept in sync on claim/cancel
+    capacity: { type: Number, required: true, min: 1, max: 100000 },
+    ticketsClaimed: { type: Number, default: 0, min: 0 }, // kept in sync atomically on claim
 
     isPaid: { type: Boolean, default: false },
-    priceNaira: { type: Number, default: 0 }, // ignored if isPaid is false
+    priceNaira: { type: Number, default: 0, min: 0 },
 
-    // Multiple organizers/admins can manage one event, per spec.
-    organizers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],
+    organizers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
-    // Which channel (if any) this event is posted through — connects
-    // Events to Campus Channels per the "how the two pieces connect" note.
+    // The channel this event is posted through (connects Events to Channels).
     channel: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' },
 
     status: { type: String, enum: ['draft', 'published', 'cancelled', 'completed'], default: 'draft' },
@@ -34,4 +31,6 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Event || mongoose.model('Event', eventSchema);
+eventSchema.index({ status: 1, startsAt: 1 });
+
+module.exports = mongoose.models.Event || mongoose.model('Event', eventSchema);

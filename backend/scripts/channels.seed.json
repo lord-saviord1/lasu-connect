@@ -1,0 +1,26 @@
+{
+  "_help": "Edit this file, then run: node scripts/seedChannels.js --admin YOUR_EMAIL  (add --apply to make changes). 'admins' = emails of people who run that channel; they must already have a LASU Connect account. 'postingMode' is 'admins' (only admins post) or 'open' (any signed-in student can post). 'eventCreators' = emails allowed to publish events.",
+  "channels": [
+    { "name": "LASU Connect", "slug": "lasu-connect", "ownerType": "brand", "postingMode": "admins",
+      "description": "News, tips and updates from the LASU Connect team.", "admins": [] },
+    { "name": "Project-NODE", "slug": "project-node", "ownerType": "brand", "postingMode": "admins",
+      "description": "Offline-first learning resources matched to your course. Built by Node Africa.", "admins": [] },
+    { "name": "Node Africa", "slug": "node-africa", "ownerType": "brand", "postingMode": "admins",
+      "description": "The company behind Project-NODE.", "admins": [] },
+    { "name": "Penova", "slug": "penova", "ownerType": "brand", "postingMode": "admins",
+      "description": "Updates from Penova.", "admins": [] },
+    { "name": "Cipher PR", "slug": "cipher-pr", "ownerType": "brand", "postingMode": "admins",
+      "description": "Marketing, design and campus communications.", "admins": [] },
+    { "name": "LASUSU Info", "slug": "lasusu-info", "ownerType": "sug", "postingMode": "admins",
+      "description": "News and updates from the Lagos State University Students' Union.", "admins": [] },
+    { "name": "SUG Office", "slug": "sug-office", "ownerType": "sug", "postingMode": "admins",
+      "description": "What your SUG executives are working on: projects, partnerships and updates.", "admins": [] },
+    { "name": "LASU Official", "slug": "lasu-official", "ownerType": "admin_office", "postingMode": "admins",
+      "description": "Official notices from the university, run by student representatives with the Centre for Information and Public Relations.", "admins": [] },
+    { "name": "Faculty of Science", "slug": "faculty-of-science", "ownerType": "faculty", "postingMode": "open",
+      "description": "Faculty of Science: notices, events and student discussion.", "admins": [] },
+    { "name": "Faculty of Management Science", "slug": "faculty-of-management-science", "ownerType": "faculty", "postingMode": "open",
+      "description": "Faculty of Management Science: notices, events and student discussion.", "admins": [] }
+  ],
+  "eventCreators": []
+}

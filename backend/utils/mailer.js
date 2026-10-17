@@ -80,4 +80,25 @@ const sendOTPEmail = async (toEmail, otp) => {
   return result;
 };
 
-module.exports = { sendOTPEmail };
+// ── Generic sender (used for event tickets) ───────────────
+// Same transport, retry and sender address as the OTP email.
+const sendEmail = async ({ to, subject, html, attachments }) => {
+  const attempts = parseInt(process.env.EMAIL_SEND_ATTEMPTS || '2', 10);
+
+  const result = await sendWithRetry(
+    () =>
+      resend.emails.send({
+        from: FROM_ADDRESS,
+        to,
+        subject,
+        html,
+        ...(attachments && attachments.length ? { attachments } : {}),
+      }),
+    attempts
+  );
+
+  console.log(`📧 "${subject}" sent via Resend to ${to} (id: ${result.data?.id || 'unknown'})`);
+  return result;
+};
+
+module.exports = { sendOTPEmail, sendEmail };
