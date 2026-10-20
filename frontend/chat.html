@@ -62,7 +62,7 @@ html{overflow-x:hidden;height:100%}body{height:100vh;height:100dvh;overflow:hidd
 .lc-app-body{display:flex;flex:1;overflow:hidden;position:relative}
 /* RAIL */
 .lc-rail{width:58px;background:var(--lc-surface);border-right:1px solid var(--lc-border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;flex-shrink:0}
-.rail-item{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--lc-muted2);font-size:19px;transition:all .15s}
+.rail-item{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--lc-muted2);font-size:19px;transition:all .15s;text-decoration:none}
 .rail-item:hover{color:var(--lc-muted);background:var(--lc-surface2)}
 .rail-item.active{color:var(--lc-green-mid);background:var(--lc-green-soft)}
 .rail-spacer{flex:1}
@@ -344,10 +344,10 @@ body{padding-bottom:56px}
 <div class="lc-app-body">
 <div class="lc-rail">
 <div class="rail-item active" title="Messages"><i class="bi bi-chat-dots"></i></div>
-<div class="rail-item" title="Campus Channels"><i class="bi bi-building"></i></div>
+<a href="channels.html" class="rail-item" title="Campus Channels"><i class="bi bi-building"></i></a>
 <div class="rail-sep"></div>
 <div class="rail-item" title="Study Groups"><i class="bi bi-book"></i></div>
-<div class="rail-item" title="Events"><i class="bi bi-calendar-event"></i></div>
+<a href="events.html" class="rail-item" title="Events"><i class="bi bi-calendar-event"></i></a>
 <div class="rail-spacer"></div>
 <div class="rail-item" title="Settings"><i class="bi bi-gear"></i></div>
 </div>
@@ -1548,9 +1548,12 @@ document.querySelectorAll('.mbn-item').forEach(i => i.classList.remove('active')
 document.getElementById('mbn-' + section)?.classList.add('active');
 if (section === 'messages') {
 openSidebar();
+} else if (section === 'channels') {
+window.location.href = 'channels.html';
+} else if (section === 'events') {
+window.location.href = 'events.html';
 } else {
-const labels = { channels: 'Campus Channels', groups: 'Campus Groups', events: 'Events' };
-showToast('🚧 ' + (labels[section]||section) + ' coming soon!', null, null, 2000);
+showToast('🚧 Campus Groups coming soon!', null, null, 2000);
 }
 }
 

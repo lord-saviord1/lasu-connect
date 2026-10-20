@@ -1,151 +1,79 @@
-:root {
-  --bg: #0B0F0E;
-  --panel: #121816;
-  --border: #1E2926;
-  --text: #F2F5F3;
-  --muted: #8FA39B;
-  --primary: #006633;
-  --primary-bright: #00A651;
-  --gold: #FFD700;
-}
+/* Channels page (shared look lives in lc-shared.css) */
+.lc-sidebar{width:250px;background:var(--lc-surface);border-right:1px solid var(--lc-border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-head{padding:14px 14px 10px;border-bottom:1px solid var(--lc-border)}
+.sidebar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px}
+.list-section-label{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--lc-muted2);text-transform:uppercase;padding:10px 14px 4px}
+.pinned-list{display:flex;flex-direction:column;padding:0 8px}
+.pinned-item{padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;color:var(--lc-text)}
+.pinned-item:hover{background:var(--lc-surface2)}
+.pinned-empty{font-size:11.5px;color:var(--lc-muted2);padding:0 14px}
+.filter-bar{display:flex;gap:4px;padding:8px 14px;flex-wrap:wrap}
+.filter-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;border:1px solid var(--lc-border);background:none;color:var(--lc-muted2);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.filter-btn:hover{color:var(--lc-muted);border-color:var(--lc-border2)}
+.filter-btn.active{background:var(--lc-green-soft);color:var(--lc-green-mid);border-color:rgba(0,102,51,0.35)}
+.mobile-filters{display:none;padding:0 0 12px;overflow-x:auto;flex-wrap:nowrap}
+.mobile-filters .filter-btn{white-space:nowrap}
 
-* { box-sizing: border-box; }
+.channels-main{flex:1;padding:20px;min-width:0}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--lc-muted);margin-bottom:16px}
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  min-height: 100vh;
-}
+/* Channel cards: the nameplate says who runs the space */
+.channel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.channel-card{background:var(--lc-surface2);border:1px solid var(--lc-border);border-radius:11px;padding:16px;padding-top:32px;cursor:pointer;position:relative;transition:border-color .15s,transform .15s}
+.channel-card:hover{border-color:var(--lc-green-mid);transform:translateY(-2px)}
+.owner-nameplate{position:absolute;top:0;left:14px;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:0 0 4px 4px}
+.owner-nameplate.sug{background:var(--lc-gold);color:#1A1400}
+.owner-nameplate.faculty{background:var(--lc-online);color:#04220F}
+.owner-nameplate.department{background:var(--lc-blue);color:#04162E}
+.owner-nameplate.brand{background:var(--lc-danger);color:#2E0A0A}
+.owner-nameplate.admin_office{background:#C77DFF;color:#23032E}
+.owner-nameplate.student{background:var(--lc-muted2);color:var(--lc-text)}
+.channel-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;word-break:break-word}
+.channel-desc{font-size:12px;color:var(--lc-muted);line-height:1.5;margin-bottom:10px;word-break:break-word}
+.channel-stats{font-size:11px;color:var(--lc-muted2)}
 
-.hidden { display: none !important; }
+/* Inside a channel */
+.back-btn{background:none;border:none;color:var(--lc-muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:12px;padding:0}
+.back-btn:hover{color:var(--lc-gold)}
+#channelHeaderInfo .owner-nameplate{position:static;display:inline-block;margin-bottom:8px}
+#channelHeaderInfo .channel-name{font-size:21px}
+.channel-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+.chip-btn{background:var(--lc-surface2);border:1px solid var(--lc-border2);color:var(--lc-text);border-radius:999px;padding:7px 14px;font-size:12.5px;cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.chip-btn:hover{border-color:var(--lc-green-mid)}
+.chip-btn.on{background:var(--lc-green-soft);border-color:rgba(0,102,51,0.45);color:var(--lc-green-mid)}
+.chip-btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* ---- Topbar ---- */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--bg); z-index: 10;
-}
-.back-link {
-  color: var(--muted); text-decoration: none; font-size: 13px;
-  background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
-}
-.back-link:hover { color: var(--gold); }
-.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; margin: 0; }
+.composer{background:var(--lc-surface2);border:1px solid var(--lc-border);border-radius:11px;padding:12px;margin-bottom:14px}
+.composer textarea{width:100%;resize:vertical;margin-bottom:8px}
+.composer-note{font-size:13px;color:var(--lc-muted)}
+.post-error{font-size:12px;color:var(--lc-danger);min-height:14px;margin-top:6px}
 
-/* ---- Layout ---- */
-.layout { display: flex; max-width: 1100px; margin: 0 auto; }
+.sort-row{display:flex;gap:6px;margin-bottom:12px}
+.sort-btn{font-size:12px;padding:5px 14px;border-radius:999px;border:1px solid var(--lc-border);background:none;color:var(--lc-muted2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.sort-btn.active{border-color:var(--lc-green-mid);color:var(--lc-green-mid)}
 
-.sidebar {
-  width: 200px; flex-shrink: 0; padding: 20px 12px;
-  border-right: 1px solid var(--border); min-height: calc(100vh - 60px);
-}
-.sidebar-title {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); margin-bottom: 10px; padding: 0 8px;
-}
-.pinned-list { display: flex; flex-direction: column; gap: 4px; }
-.pinned-item {
-  padding: 8px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text);
-}
-.pinned-item:hover { background: var(--panel); }
-.pinned-empty { font-size: 12px; color: var(--muted); padding: 0 8px; }
+/* Posts: Reddit-style upvote rail */
+.posts-list{display:flex;flex-direction:column;gap:9px}
+.post-card{display:flex;gap:12px;background:var(--lc-surface2);border:1px solid var(--lc-border);border-radius:11px;padding:14px}
+.vote-rail{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:30px}
+.vote-arrow{background:none;border:none;color:var(--lc-muted2);cursor:pointer;font-size:15px;line-height:1;padding:2px}
+.vote-arrow:hover,.vote-arrow.voted{color:var(--lc-gold)}
+.vote-count{font-size:12.5px;font-weight:700;color:var(--lc-muted)}
+.post-body{flex:1;min-width:0}
+.post-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.post-author{font-size:12.5px;font-weight:600;color:var(--lc-text)}
+.official-badge{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--lc-green-soft);color:var(--lc-online);border:1px solid rgba(0,102,51,0.4);padding:1px 7px;border-radius:999px}
+.post-time{font-size:11px;color:var(--lc-muted2)}
+.post-content{font-size:13.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.post-footer{display:flex;gap:14px;margin-top:10px}
+.post-act{background:none;border:none;color:var(--lc-muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:0}
+.post-act:hover{color:var(--lc-text)}
+.post-act.danger:hover{color:var(--lc-danger)}
+.load-more{text-align:center;margin-top:14px}
 
-.owner-filters { display: flex; flex-direction: column; gap: 2px; }
-.filter-chip {
-  background: none; border: none; text-align: left; color: var(--muted);
-  padding: 7px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-}
-.filter-chip:hover { background: var(--panel); }
-.filter-chip.active { background: var(--primary); color: white; font-weight: 600; }
-
-.discovery, .channel-space { flex: 1; padding: 20px; }
-
-/* ---- Channel nameplate cards: the signature element ----
-   Modeled on an actual campus noticeboard nameplate — a tag naming
-   who runs the space (SUG / FACULTY / DEPT / BRAND / ADMIN OFFICE /
-   STUDENT), because ownership type is the real organizing fact of a
-   channel, per the spec. */
-.channel-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 16px;
-}
-.channel-card {
-  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-  padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
-  position: relative; padding-top: 34px;
-}
-.channel-card:hover { border-color: var(--primary-bright); transform: translateY(-2px); }
-
-.owner-nameplate {
-  position: absolute; top: 0; left: 16px;
-  background: var(--gold); color: #1A1400;
-  font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 3px 8px; border-radius: 0 0 4px 4px;
-}
-.owner-nameplate.sug { background: var(--gold); }
-.owner-nameplate.faculty { background: var(--primary-bright); color: #041; }
-.owner-nameplate.department { background: #4A9EFF; color: #04162E; }
-.owner-nameplate.brand { background: #E85D5D; color: #2E0A0A; }
-.owner-nameplate.admin_office { background: #C77DFF; color: #23032E; }
-.owner-nameplate.student { background: var(--muted); color: #0B0F0E; }
-
-.channel-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin: 0 0 4px; }
-.channel-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.channel-stats { font-size: 11px; color: var(--muted); }
-
-/* ---- Channel space ---- */
-.channel-header { margin-bottom: 16px; }
-#channelHeaderInfo { margin-top: 10px; }
-#channelHeaderInfo .channel-name { font-size: 22px; }
-
-.composer {
-  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-  padding: 12px; margin-bottom: 16px;
-}
-.composer textarea {
-  width: 100%; background: #0E1613; border: 1px solid var(--border); border-radius: 8px;
-  padding: 10px 12px; color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif;
-  resize: vertical; margin-bottom: 8px;
-}
-.primary-btn {
-  background: var(--primary); border: none; border-radius: 8px; padding: 10px 18px;
-  color: white; font-weight: 700; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif;
-}
-.primary-btn:hover { background: var(--primary-bright); }
-
-.sort-row { display: flex; gap: 8px; margin-bottom: 12px; }
-.sort-btn {
-  background: none; border: 1px solid var(--border); color: var(--muted);
-  padding: 6px 14px; border-radius: 999px; font-size: 12px; cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-}
-.sort-btn.active { border-color: var(--primary-bright); color: var(--primary-bright); }
-
-/* ---- Posts: Reddit-style upvote rail ---- */
-.posts-list { display: flex; flex-direction: column; gap: 10px; }
-.post-card {
-  display: flex; gap: 12px;
-  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
-}
-.vote-rail {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  flex-shrink: 0; width: 32px;
-}
-.vote-arrow {
-  background: none; border: none; color: var(--muted); cursor: pointer;
-  font-size: 16px; line-height: 1; padding: 2px;
-}
-.vote-arrow:hover, .vote-arrow.voted { color: var(--gold); }
-.vote-count { font-size: 13px; font-weight: 700; }
-
-.post-body { flex: 1; }
-.post-author { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-.post-content { font-size: 14px; line-height: 1.5; }
-
-@media (max-width: 720px) {
-  .layout { flex-direction: column; }
-  .sidebar { width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+@media (max-width:720px){
+  .lc-sidebar{display:none}
+  .mobile-filters{display:flex}
+  .channels-main{padding:14px}
 }

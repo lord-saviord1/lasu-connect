@@ -1,66 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campus Channels — LASU Connect</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="description" content="Official channels for the SUG, faculties, brands and student communities at Lagos State University.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a2e1a">
+<link rel="canonical" href="https://lasu-connect.netlify.app/channels.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LASU Connect">
+<meta property="og:title" content="Campus Channels — LASU Connect">
+<meta property="og:description" content="Official channels for the SUG, faculties, brands and student communities at Lagos State University.">
+<meta property="og:url" content="https://lasu-connect.netlify.app/channels.html">
+<meta property="og:image" content="https://lasu-connect.netlify.app/og-image.png">
+<meta property="og:locale" content="en_NG">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="shortcut icon" href="/favicon.ico">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="lc-shared.css" />
 <link rel="stylesheet" href="channels.css" />
 </head>
 <body>
 
-<header class="topbar">
-  <a href="chat.html" class="back-link">← Back</a>
-  <h1 class="logo">Campus Channels</h1>
-  <div></div>
-</header>
+<nav class="lc-navbar">
+  <a href="chat.html" class="lc-brand">
+    <div class="lc-brand-icon"><span>LC</span></div>
+    <div><span class="lc-brand-name">LASU Connect</span><span class="lc-brand-tag">Channels</span></div>
+  </a>
+  <div class="nav-spacer"></div>
+  <a id="signInLink" href="login.html" class="btn-start-dm hidden">Sign in</a>
+</nav>
 
-<div class="layout">
+<div class="lc-app-body">
 
-  <!-- Sidebar: pinned channels -->
-  <aside class="sidebar">
-    <div class="sidebar-title">Pinned</div>
+  <div class="lc-rail">
+    <a href="chat.html" class="rail-item" title="Messages"><i class="bi bi-chat-dots"></i></a>
+    <a href="channels.html" class="rail-item active" title="Campus Channels"><i class="bi bi-building"></i></a>
+    <div class="rail-sep"></div>
+    <div class="rail-item disabled" title="Study Groups (coming soon)"><i class="bi bi-book"></i></div>
+    <a href="events.html" class="rail-item" title="Events"><i class="bi bi-calendar-event"></i></a>
+  </div>
+
+  <aside class="lc-sidebar">
+    <div class="sidebar-head"><span class="sidebar-title">Channels</span></div>
+    <div class="list-section-label">Pinned</div>
     <div id="pinnedList" class="pinned-list"></div>
-    <div class="sidebar-title" style="margin-top:20px;">Browse</div>
-    <div id="ownerFilters" class="owner-filters">
-      <button class="filter-chip active" data-owner="">All</button>
-      <button class="filter-chip" data-owner="sug">SUG</button>
-      <button class="filter-chip" data-owner="faculty">Faculty</button>
-      <button class="filter-chip" data-owner="department">Dept</button>
-      <button class="filter-chip" data-owner="brand">Brand</button>
-      <button class="filter-chip" data-owner="admin_office">Admin</button>
-      <button class="filter-chip" data-owner="student">Student</button>
+    <div class="list-section-label">Browse</div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-owner="">All</button>
+      <button class="filter-btn" data-owner="sug">SUG</button>
+      <button class="filter-btn" data-owner="faculty">Faculty</button>
+      <button class="filter-btn" data-owner="department">Dept</button>
+      <button class="filter-btn" data-owner="brand">Brand</button>
+      <button class="filter-btn" data-owner="admin_office">Admin</button>
+      <button class="filter-btn" data-owner="student">Student</button>
     </div>
   </aside>
 
-  <!-- Discovery grid -->
-  <main id="discoveryView" class="discovery">
+  <!-- Discovery -->
+  <main id="discoveryView" class="channels-main">
+    <h1 class="page-title">Campus Channels</h1>
+    <p class="page-sub">Official spaces for the SUG, faculties, brands and student communities. Anyone can read. Sign in to follow and join in.</p>
+    <div class="filter-bar mobile-filters">
+      <button class="filter-btn active" data-owner="">All</button>
+      <button class="filter-btn" data-owner="sug">SUG</button>
+      <button class="filter-btn" data-owner="faculty">Faculty</button>
+      <button class="filter-btn" data-owner="department">Dept</button>
+      <button class="filter-btn" data-owner="brand">Brand</button>
+      <button class="filter-btn" data-owner="admin_office">Admin</button>
+      <button class="filter-btn" data-owner="student">Student</button>
+    </div>
     <div id="channelGrid" class="channel-grid"></div>
   </main>
 
-  <!-- Channel space (posts feed) -->
-  <main id="channelView" class="channel-space hidden">
-    <div class="channel-header">
-      <button id="backToDiscovery" class="back-link">← All channels</button>
-      <div id="channelHeaderInfo"></div>
-    </div>
+  <!-- One channel -->
+  <main id="channelView" class="channels-main hidden">
+    <button id="backToDiscovery" class="back-btn">← All channels</button>
+    <div id="channelHeaderInfo"></div>
+    <div id="channelActions" class="channel-actions"></div>
 
-    <div class="composer">
-      <textarea id="postContent" placeholder="Post something to this channel..." rows="2"></textarea>
-      <button id="submitPost" class="primary-btn">Post</button>
+    <div id="composerWrap" class="composer hidden">
+      <div id="composerBox">
+        <textarea id="postContent" placeholder="Post something to this channel..." rows="3" maxlength="2000"></textarea>
+        <button id="submitPost" class="btn-start-dm">Post</button>
+      </div>
+      <div id="composerNote" class="composer-note hidden"></div>
+      <div id="postError" class="post-error"></div>
     </div>
 
     <div class="sort-row">
       <button class="sort-btn active" data-sort="top">Top</button>
       <button class="sort-btn" data-sort="new">New</button>
     </div>
-
     <div id="postsList" class="posts-list"></div>
+    <div id="loadMoreWrap" class="load-more hidden"><button id="loadMoreBtn" class="chip-btn">Load more</button></div>
   </main>
 
 </div>
 
+<nav class="m-nav">
+  <a href="chat.html"><i class="bi bi-chat-dots"></i><span>Messages</span></a>
+  <a href="channels.html" class="active"><i class="bi bi-building"></i><span>Channels</span></a>
+  <a href="events.html"><i class="bi bi-calendar-event"></i><span>Events</span></a>
+</nav>
+
+<script src="api.js"></script>
 <script src="channels.js"></script>
 </body>
 </html>

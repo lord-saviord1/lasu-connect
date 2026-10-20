@@ -1,0 +1,60 @@
+/* Shared look for the Channels and Events pages. Uses the same --lc-* tokens,
+   navbar and rail as chat.html so the three pages feel like one app. */
+:root{
+  --lc-green:#006633;--lc-green-mid:#00894A;--lc-green-soft:rgba(0,102,51,0.15);
+  --lc-gold:#FFD700;--lc-dark:#0B0F0E;--lc-surface:#101613;--lc-surface2:#161D1A;
+  --lc-surface3:#1C2520;--lc-border:rgba(255,255,255,0.06);--lc-border2:rgba(255,255,255,0.1);
+  --lc-text:#E4EBE7;--lc-muted:#7A8F83;--lc-muted2:#4A5E54;--lc-online:#4ADE80;
+  --lc-danger:#EF4444;--lc-warn:#F59E0B;--lc-blue:#3B82F6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden;height:100%}
+body{min-height:100vh;background:var(--lc-dark);color:var(--lc-text);font-family:'DM Sans',sans-serif}
+a{color:var(--lc-green-mid)}
+.hidden{display:none !important}
+.muted{color:var(--lc-muted);font-size:13px}
+.err{color:var(--lc-danger);font-size:13px}
+
+/* Navbar (same as chat.html) */
+.lc-navbar{height:54px;background:var(--lc-surface);border-bottom:1px solid var(--lc-border);display:flex;align-items:center;padding:0 12px;gap:8px;position:sticky;top:0;z-index:100;width:100%}
+.lc-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.lc-brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));border-radius:9px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,215,0,0.2)}
+.lc-brand-icon span{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--lc-gold)}
+.lc-brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--lc-text);white-space:nowrap}
+.lc-brand-tag{font-size:9px;background:rgba(0,102,51,0.25);color:var(--lc-online);border:1px solid rgba(0,102,51,0.35);padding:1px 7px;border-radius:20px;font-weight:500;margin-left:6px}
+.nav-spacer{flex:1}
+.nav-icon-btn{height:34px;min-width:34px;padding:0 10px;border-radius:8px;background:var(--lc-surface2);border:1px solid var(--lc-border);color:var(--lc-muted);display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;text-decoration:none;transition:all .15s}
+.nav-icon-btn:hover{background:var(--lc-surface3);color:var(--lc-text)}
+
+.btn-start-dm{background:linear-gradient(135deg,var(--lc-green),var(--lc-green-mid));border:none;border-radius:9px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:9px 18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;transition:opacity .15s}
+.btn-start-dm:hover{opacity:.9}
+.btn-start-dm:disabled{opacity:.5;cursor:not-allowed}
+
+/* Left rail (same as chat.html) */
+.lc-app-body{display:flex;min-height:calc(100vh - 54px)}
+.lc-rail{width:58px;background:var(--lc-surface);border-right:1px solid var(--lc-border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;flex-shrink:0}
+.rail-item{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--lc-muted2);font-size:19px;transition:all .15s;text-decoration:none}
+.rail-item:hover{color:var(--lc-muted);background:var(--lc-surface2)}
+.rail-item.active{color:var(--lc-green-mid);background:var(--lc-green-soft)}
+.rail-item.disabled{opacity:.45;cursor:default}
+.rail-spacer{flex:1}
+.rail-sep{width:28px;height:1px;background:var(--lc-border);margin:6px 0}
+
+/* Forms */
+input,textarea{background:var(--lc-dark);border:1px solid var(--lc-border);border-radius:8px;padding:10px 12px;color:var(--lc-text);font-size:13.5px;font-family:'DM Sans',sans-serif}
+input:focus,textarea:focus{outline:none;border-color:var(--lc-green-mid)}
+
+/* Small floating message */
+.lc-toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--lc-surface3);border:1px solid var(--lc-border2);color:var(--lc-text);padding:10px 16px;border-radius:10px;font-size:13px;z-index:500;max-width:90vw}
+
+/* Phone navigation (the rail is hidden on small screens) */
+.m-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--lc-surface);border-top:1px solid var(--lc-border);z-index:300;align-items:center;justify-content:space-around}
+.m-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 14px;color:var(--lc-muted2);font-size:10px;text-decoration:none;border-radius:10px}
+.m-nav a i{font-size:20px}
+.m-nav a.active{color:var(--lc-green-mid)}
+@media (max-width:720px){
+  .lc-rail{display:none}
+  .m-nav{display:flex}
+  body{padding-bottom:64px}
+  .lc-brand-name{font-size:15px}
+}

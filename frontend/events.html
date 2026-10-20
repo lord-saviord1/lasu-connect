@@ -1,75 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Events — LASU Connect</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="description" content="Discover and get free tickets for events at Lagos State University: societies, faculties and the SUG.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a2e1a">
+<link rel="canonical" href="https://lasu-connect.netlify.app/events.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LASU Connect">
+<meta property="og:title" content="Events — LASU Connect">
+<meta property="og:description" content="Discover and get free tickets for events at Lagos State University: societies, faculties and the SUG.">
+<meta property="og:url" content="https://lasu-connect.netlify.app/events.html">
+<meta property="og:image" content="https://lasu-connect.netlify.app/og-image.png">
+<meta property="og:locale" content="en_NG">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="shortcut icon" href="/favicon.ico">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="lc-shared.css" />
 <link rel="stylesheet" href="events.css" />
 </head>
 <body>
 
-<header class="topbar">
-  <a href="chat.html" class="back-link">← Back</a>
-  <h1 class="logo">Events</h1>
-  <button id="createEventBtn" class="ghost-btn hidden">+ Create</button>
-</header>
+<nav class="lc-navbar">
+  <a href="chat.html" class="lc-brand">
+    <div class="lc-brand-icon"><span>LC</span></div>
+    <div><span class="lc-brand-name">LASU Connect</span><span class="lc-brand-tag">Events</span></div>
+  </a>
+  <div class="nav-spacer"></div>
+  <button id="createEventBtn" class="btn-start-dm hidden"><i class="bi bi-plus-lg"></i> Create event</button>
+  <button id="myTicketsBtn" class="nav-icon-btn hidden" title="My tickets"><i class="bi bi-ticket-perforated"></i> My tickets</button>
+  <a id="signInLink" href="login.html" class="btn-start-dm hidden">Sign in</a>
+</nav>
 
-<main class="container">
+<div class="lc-app-body">
 
-  <section id="eventList" class="ticket-grid">
-    <!-- ticket cards injected here -->
-  </section>
+  <div class="lc-rail">
+    <a href="chat.html" class="rail-item" title="Messages"><i class="bi bi-chat-dots"></i></a>
+    <a href="channels.html" class="rail-item" title="Campus Channels"><i class="bi bi-building"></i></a>
+    <div class="rail-sep"></div>
+    <div class="rail-item disabled" title="Study Groups (coming soon)"><i class="bi bi-book"></i></div>
+    <a href="events.html" class="rail-item active" title="Events"><i class="bi bi-calendar-event"></i></a>
+  </div>
 
-  <p id="emptyState" class="empty-state hidden">
-    Nothing on the calendar yet. Check back soon, or if you organize for a
-    society or department, create the first one.
-  </p>
+  <main class="events-main">
+    <div class="events-header">
+      <h1 class="page-title">Events</h1>
+      <p class="page-sub">Free events across campus. Anyone can browse. Sign in with your LASU Mail to get a ticket.</p>
+    </div>
 
-</main>
+    <div id="eventGrid" class="ticket-grid"></div>
 
-<!-- Event detail / claim modal -->
+    <div id="emptyState" class="empty-state hidden">
+      <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
+      <h3>Nothing on the calendar yet</h3>
+      <p>Check back soon. Society and department organizers will post upcoming events here.</p>
+    </div>
+  </main>
+
+</div>
+
+<nav class="m-nav">
+  <a href="chat.html"><i class="bi bi-chat-dots"></i><span>Messages</span></a>
+  <a href="channels.html"><i class="bi bi-building"></i><span>Channels</span></a>
+  <a href="events.html" class="active"><i class="bi bi-calendar-event"></i><span>Events</span></a>
+</nav>
+
+<!-- Event details / claim -->
 <div id="eventModal" class="modal hidden">
   <div class="modal-box">
-    <button id="closeModal" class="close-btn">✕</button>
+    <button id="closeModal" class="close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
     <div id="modalContent"></div>
   </div>
 </div>
 
-<!-- My tickets drawer -->
-<button id="myTicketsBtn" class="fab">My Tickets</button>
+<!-- My tickets -->
 <div id="ticketsDrawer" class="drawer hidden">
   <div class="drawer-head">
-    <span>My Tickets</span>
-    <button id="closeDrawer" class="close-btn">✕</button>
+    <span>My tickets</span>
+    <button id="closeDrawer" class="close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
   </div>
   <div id="ticketsList" class="tickets-list"></div>
 </div>
 
-<!-- Create event form (organizer) -->
+<!-- Create event (approved organizers only) -->
 <div id="createModal" class="modal hidden">
   <div class="modal-box">
-    <button id="closeCreateModal" class="close-btn">✕</button>
-    <h2>Create Event</h2>
+    <button id="closeCreateModal" class="close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <h2>Create event</h2>
     <form id="createEventForm">
-      <input type="text" id="ev-title" placeholder="Event title" required />
-      <textarea id="ev-description" placeholder="Description" rows="3"></textarea>
-      <label class="field-label">Date & time</label>
+      <input type="text" id="ev-title" placeholder="Event title" required minlength="3" maxlength="120" />
+      <textarea id="ev-description" placeholder="Description" rows="3" maxlength="2000"></textarea>
+      <label class="field-label" for="ev-startsAt">Date and time (Lagos time)</label>
       <input type="datetime-local" id="ev-startsAt" required />
-      <input type="text" id="ev-venue" placeholder="Venue" required />
-      <input type="number" id="ev-capacity" placeholder="Capacity" required min="1" />
-      <label class="toggle-row">
-        <input type="checkbox" id="ev-isPaid" />
-        <span>This is a paid event</span>
-      </label>
-      <input type="number" id="ev-price" placeholder="Price (₦)" class="hidden" />
-      <button type="submit" class="primary-btn">Publish Event</button>
+      <input type="text" id="ev-venue" placeholder="Venue" required minlength="2" maxlength="120" />
+      <input type="number" id="ev-capacity" placeholder="How many tickets?" required min="1" max="100000" />
+      <p class="form-hint">Events are free for now. Paid tickets are coming later.</p>
+      <button type="submit" class="btn-start-dm">Publish event</button>
       <p id="createMsg" class="msg"></p>
     </form>
   </div>
 </div>
 
+<script src="api.js"></script>
 <script src="events.js"></script>
 </body>
 </html>
