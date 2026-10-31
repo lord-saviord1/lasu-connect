@@ -26,7 +26,17 @@ const eventSchema = new mongoose.Schema(
     // The channel this event is posted through (connects Events to Channels).
     channel: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' },
 
-    status: { type: String, enum: ['draft', 'published', 'cancelled', 'completed'], default: 'draft' },
+    // draft -> pending_review -> published (or rejected, then fixed and resubmitted).
+    // Only the review team moves an event to 'published'.
+    status: { type: String, enum: ['draft', 'pending_review', 'rejected', 'published', 'cancelled', 'completed'], default: 'draft' },
+
+    // For the review team to reach the organizer. Never shown publicly.
+    contactPhone: { type: String, trim: true, maxlength: 20 },
+
+    submittedAt: { type: Date },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reviewedAt: { type: Date },
+    reviewNote: { type: String, default: '', maxlength: 500 }, // why an event was sent back
   },
   { timestamps: true }
 );

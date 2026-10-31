@@ -3,10 +3,12 @@ const rateLimit = require('express-rate-limit');
 const Event = require('../models/Event');
 const Ticket = require('../models/Ticket');
 const Channel = require('../models/Channel');
+const User = require('../models/User');
 const { protect, requireRole } = require('../middleware/auth');
 const { requireEventOrganizer } = require('../middleware/eventPermissions');
 const { generateTicketQR, generateTicketQRBuffer } = require('../utils/qrService');
 const { sendTicketEmail } = require('../utils/ticketMailer');
+const { sendEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -27,6 +29,47 @@ const endOf = (e) => e.endsAt || new Date(new Date(e.startsAt).getTime() + 12 * 
 
 const ownCloudinary = (u) => typeof u === 'string' && u.startsWith(
   process.env.CLOUDINARY_CLOUD_NAME ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/` : 'https://res.cloudinary.com/');
+
+const esc = (x) => String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const REVIEWERS = ['admin', 'reviewer']; // who can approve events: LASU Connect team + the Social Director's office
+const PHONE = /^\+?[0-9][0-9\s-]{6,18}$/;
+
+// Tell the review team a new event is waiting. Best effort: a failed email never blocks the organizer.
+async function notifyReviewers(event, organizer) {
+  try {
+    const reviewers = await User.find({ role: { $in: REVIEWERS }, isVerified: true }).select('email').limit(10).lean();
+    const base = (process.env.CLIENT_URL || '').split(',')[0].trim().replace(/\/$/, '');
+    for (const r of reviewers) {
+      try {
+        await sendEmail({
+          to: r.email,
+          subject: `New event to review: ${event.title}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:480px">
+            <h3 style="color:#006633">New event waiting for review</h3>
+            <p><b>${esc(event.title)}</b><br/>${esc(event.venue)}<br/>Submitted by ${esc(organizer.displayName)}</p>
+            ${base ? `<p><a href="${esc(base)}/review.html">Open the review page</a></p>` : ''}</div>`,
+        });
+      } catch (e) { console.error('Reviewer email failed:', e.message); }
+    }
+  } catch (e) { console.error('notifyReviewers failed:', e.message); }
+}
+
+// Tell the organizer what the review team decided.
+async function notifyOrganizer(event, decision, note) {
+  try {
+    const organizer = event.organizers && event.organizers[0];
+    if (!organizer || !organizer.email) return;
+    const ok = decision === 'approve';
+    await sendEmail({
+      to: organizer.email,
+      subject: ok ? `Your event is live: ${event.title}` : `Your event needs changes: ${event.title}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:480px">
+        <h3 style="color:${ok ? '#006633' : '#b45309'}">${ok ? 'Your event was approved' : 'Your event was sent back'}</h3>
+        <p><b>${esc(event.title)}</b></p>
+        ${ok ? '<p>It is now visible to everyone on LASU Connect.</p>' : `<p>The review team says:</p><blockquote style="border-left:3px solid #b45309;margin:0;padding-left:10px">${esc(note)}</blockquote><p>Please fix this and submit it again.</p>`}</div>`,
+    });
+  } catch (e) { console.error('notifyOrganizer failed:', e.message); }
+}
 
 // Validates the fields a client may set. Anything else in the body is ignored
 // (never copy req.body straight into the database).
@@ -63,6 +106,11 @@ async function validateEventInput(body, user, { creating }) {
     const c = Number(body.capacity);
     if (!Number.isInteger(c) || c < 1 || c > 100000) return bad('Capacity must be a whole number from 1 to 100000.');
     out.capacity = c;
+  }
+  if (creating || body.contactPhone !== undefined) {
+    const p = typeof body.contactPhone === 'string' ? body.contactPhone.trim() : '';
+    if (!PHONE.test(p)) return bad('Please give a phone or WhatsApp number the review team can reach you on.');
+    out.contactPhone = p.replace(/[\s-]/g, '');
   }
   if (body.coverImage !== undefined && ownCloudinary(body.coverImage)) out.coverImage = body.coverImage;
 
@@ -106,6 +154,57 @@ router.get('/tickets/mine', protect, async (req, res) => {
   } catch (err) {
     console.error('My tickets error:', err);
     fail(res, 500, 'Failed to load your tickets.');
+  }
+});
+
+// Events I organize, in every state (so organizers can see "in review" / "needs changes").
+router.get('/mine/organizing', protect, async (req, res) => {
+  try {
+    const events = await Event.find({ organizers: req.user._id }).sort({ createdAt: -1 }).limit(100)
+      .populate('channel', 'name slug').lean();
+    res.json({ success: true, events });
+  } catch (err) {
+    console.error('My events error:', err);
+    fail(res, 500, 'Failed to load your events.');
+  }
+});
+
+// ---------------- Review team ----------------
+
+router.get('/review/queue', protect, requireRole(...REVIEWERS), async (req, res) => {
+  try {
+    const events = await Event.find({ status: 'pending_review' }).sort({ submittedAt: 1 }).limit(100)
+      .populate('organizers', 'displayName fullName email').populate('channel', 'name slug').lean();
+    res.json({ success: true, events });
+  } catch (err) {
+    console.error('Review queue error:', err);
+    fail(res, 500, 'Failed to load the review queue.');
+  }
+});
+
+// Approve or send back. One atomic update moves it out of the queue, so two
+// reviewers can never both act on the same event.
+router.post('/:id/review', protect, requireRole(...REVIEWERS), async (req, res) => {
+  try {
+    const decision = req.body.decision;
+    const note = typeof req.body.note === 'string' ? req.body.note.trim().slice(0, 500) : '';
+    if (!['approve', 'reject'].includes(decision)) return fail(res, 400, 'Decision must be approve or reject.');
+    if (decision === 'reject' && note.length < 3) return fail(res, 400, 'Please tell the organizer why, in a few words.');
+
+    const event = await Event.findOneAndUpdate(
+      { _id: req.params.id, status: 'pending_review' },
+      { status: decision === 'approve' ? 'published' : 'rejected', reviewedBy: req.user._id, reviewedAt: new Date(), reviewNote: note },
+      { new: true }
+    ).populate('organizers', 'email displayName');
+    if (!event) {
+      const exists = await Event.exists({ _id: req.params.id });
+      return fail(res, exists ? 409 : 404, exists ? 'This event is not waiting for review (someone may have handled it already).' : 'Event not found.');
+    }
+    notifyOrganizer(event, decision, note);
+    res.json({ success: true, event: { _id: event._id, status: event.status } });
+  } catch (err) {
+    console.error('Review error:', err);
+    fail(res, 500, 'Failed to save the review.');
   }
 });
 
@@ -169,20 +268,27 @@ router.post('/:id/claim', protect, claimLimiter, async (req, res) => {
 
 // ---------------- Organizers ----------------
 
-// Only people the team has approved (role 'official' or 'admin') can publish events.
-router.post('/', protect, requireRole('official', 'admin'), createLimiter, async (req, res) => {
+// Approved organizers (role official) and the review team can create events. An organizer's
+// event goes to the review team first; the review team's own events publish straight away.
+router.post('/', protect, requireRole('official', 'reviewer', 'admin'), createLimiter, async (req, res) => {
   try {
     const v = await validateEventInput(req.body, req.user, { creating: true });
     if (v.error) return fail(res, v.status || 400, v.error);
     if (v.value.endsAt && v.value.endsAt <= v.value.startsAt) return fail(res, 400, 'The end time must be after the start time.');
 
+    const isReviewer = REVIEWERS.includes(req.user.role);
+    const status = req.body.status === 'draft' ? 'draft' : (isReviewer ? 'published' : 'pending_review');
     const event = await Event.create({
       ...v.value,
       organizers: [req.user._id],
-      isPaid: false, priceNaira: 0, ticketsClaimed: 0, // free events only at launch
-      status: req.body.status === 'draft' ? 'draft' : 'published',
+      isPaid: false, priceNaira: 0, ticketsClaimed: 0, // free events only for now
+      status,
+      submittedAt: status === 'draft' ? undefined : new Date(),
+      reviewedBy: status === 'published' ? req.user._id : undefined,
+      reviewedAt: status === 'published' ? new Date() : undefined,
     });
-    res.status(201).json({ success: true, event });
+    if (status === 'pending_review') notifyReviewers(event, req.user);
+    res.status(201).json({ success: true, event, needsReview: status === 'pending_review' });
   } catch (err) {
     console.error('Create event error:', err);
     fail(res, 500, 'Failed to create event.');
@@ -193,19 +299,38 @@ router.patch('/:id', protect, requireEventOrganizer, async (req, res) => {
   try {
     const v = await validateEventInput(req.body, req.user, { creating: false });
     if (v.error) return fail(res, v.status || 400, v.error);
-
     const updates = v.value;
+    const isReviewer = REVIEWERS.includes(req.user.role);
+
     if (req.body.status !== undefined) {
-      if (!['draft', 'published', 'cancelled', 'completed'].includes(req.body.status)) return fail(res, 400, 'Unknown status.');
+      const allowed = isReviewer
+        ? ['draft', 'pending_review', 'rejected', 'published', 'cancelled', 'completed']
+        : ['draft', 'pending_review', 'cancelled', 'completed']; // organizers cannot publish themselves
+      if (!allowed.includes(req.body.status)) {
+        return fail(res, 400, isReviewer ? 'Unknown status.' : 'Events are published by the review team, not directly.');
+      }
       updates.status = req.body.status;
     }
     if (updates.capacity !== undefined && updates.capacity < req.event.ticketsClaimed) {
       return fail(res, 400, `Capacity cannot be lower than the ${req.event.ticketsClaimed} tickets already claimed.`);
     }
+
+    // Changing anything the public sees on an approved event sends it back for review,
+    // otherwise an event could be approved as harmless and then edited into something else.
+    const same = (x, y) => ((x instanceof Date || y instanceof Date) ? new Date(x).getTime() === new Date(y).getTime() : String(x == null ? '' : x) === String(y == null ? '' : y));
+    const changedPublic = ['title', 'description', 'venue', 'startsAt', 'endsAt', 'coverImage'].some((f) => updates[f] !== undefined && !same(updates[f], req.event[f]));
+    let sentBack = false;
+    if (!isReviewer && req.event.status === 'published' && changedPublic && updates.status === undefined) {
+      updates.status = 'pending_review'; sentBack = true;
+    }
+    const resubmitting = updates.status === 'pending_review' && req.event.status !== 'pending_review';
+    if (resubmitting) { updates.submittedAt = new Date(); updates.reviewNote = ''; }
+
     Object.assign(req.event, updates);
     if (req.event.endsAt && req.event.endsAt <= req.event.startsAt) return fail(res, 400, 'The end time must be after the start time.');
     await req.event.save();
-    res.json({ success: true, event: req.event });
+    if (resubmitting) notifyReviewers(req.event, req.user);
+    res.json({ success: true, event: req.event, needsReview: sentBack || req.event.status === 'pending_review' });
   } catch (err) {
     console.error('Update event error:', err);
     fail(res, 500, 'Failed to update event.');

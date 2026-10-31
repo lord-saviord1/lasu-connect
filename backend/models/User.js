@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
   isVerified:   { type: Boolean, default: false },
   isOnline:     { type: Boolean, default: false },
   lastSeen:     { type: Date,    default: Date.now },
-  role:         { type: String,  enum: ['student','official','admin'], default: 'student' },
+  role:         { type: String,  enum: ['student','official','reviewer','admin'], default: 'student' },
   socketId:     { type: String,  default: null },
 }, { timestamps: true });
 

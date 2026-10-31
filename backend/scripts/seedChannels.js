@@ -89,14 +89,28 @@ async function run() {
     updated++;
   }
 
+  console.log('\nEvent reviewers (LASU Connect team + the Social Director\'s office):');
+  if (!(config.reviewers || []).length) console.log('  none listed');
+  for (const email of config.reviewers || []) {
+    const u = await findUser(email);
+    if (!u) { missingAccounts.add(`${email} (reviewer)`); continue; }
+    const full = await User.findById(u._id).select('role');
+    if (full.role === 'admin' || full.role === 'reviewer') {
+      console.log(`  ${email}: already a reviewer (role is ${full.role})`);
+    } else {
+      console.log(`  ${email}: will be able to review and approve events (role -> reviewer)`);
+      if (APPLY) await User.updateOne({ _id: u._id }, { $set: { role: 'reviewer' } });
+    }
+  }
+
   console.log('\nEvent creators:');
   if (!(config.eventCreators || []).length) console.log('  none listed');
   for (const email of config.eventCreators || []) {
     const u = await findUser(email);
     if (!u) { missingAccounts.add(`${email} (event creator)`); continue; }
     const full = await User.findById(u._id).select('role displayName');
-    if (full.role === 'student') {
-      console.log(`  ${email}: will be allowed to publish events (role -> official)`);
+    if (full.role === 'student') { // reviewers and admins can already create events
+      console.log(`  ${email}: will be allowed to submit events (role -> official)`);
       if (APPLY) await User.updateOne({ _id: u._id }, { $set: { role: 'official' } });
     } else {
       console.log(`  ${email}: already allowed (role is ${full.role})`);

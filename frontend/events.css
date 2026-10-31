@@ -61,3 +61,8 @@ form{display:flex;flex-direction:column;gap:9px}
   .events-main{padding:16px}
   .ticket-grid{grid-template-columns:1fr}
 }
+
+/* My events + review states */
+.ticket-status.warn{background:rgba(245,158,11,.15);color:var(--lc-warn)}
+.ticket-status.bad{background:rgba(239,68,68,.15);color:var(--lc-danger)}
+.review-note{margin-top:10px;font-size:12px;line-height:1.5;color:var(--lc-text);background:var(--lc-surface3);border-left:3px solid var(--lc-warn);border-radius:6px;padding:8px 10px;white-space:pre-wrap;word-break:break-word}

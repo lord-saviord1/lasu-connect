@@ -33,6 +33,8 @@
     <div><span class="lc-brand-name">LASU Connect</span><span class="lc-brand-tag">Events</span></div>
   </a>
   <div class="nav-spacer"></div>
+  <a id="reviewLink" href="review.html" class="nav-icon-btn hidden" title="Review events"><i class="bi bi-shield-check"></i> Review</a>
+  <button id="myEventsBtn" class="nav-icon-btn hidden" title="My events"><i class="bi bi-calendar-check"></i> My events</button>
   <button id="createEventBtn" class="btn-start-dm hidden"><i class="bi bi-plus-lg"></i> Create event</button>
   <button id="myTicketsBtn" class="nav-icon-btn hidden" title="My tickets"><i class="bi bi-ticket-perforated"></i> My tickets</button>
   <a id="signInLink" href="login.html" class="btn-start-dm hidden">Sign in</a>
@@ -88,6 +90,15 @@
   <div id="ticketsList" class="tickets-list"></div>
 </div>
 
+<!-- My events (organizers) -->
+<div id="myEventsDrawer" class="drawer hidden">
+  <div class="drawer-head">
+    <span>My events</span>
+    <button id="closeMyEvents" class="close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div id="myEventsList" class="tickets-list"></div>
+</div>
+
 <!-- Create event (approved organizers only) -->
 <div id="createModal" class="modal hidden">
   <div class="modal-box">
@@ -100,7 +111,8 @@
       <input type="datetime-local" id="ev-startsAt" required />
       <input type="text" id="ev-venue" placeholder="Venue" required minlength="2" maxlength="120" />
       <input type="number" id="ev-capacity" placeholder="How many tickets?" required min="1" max="100000" />
-      <p class="form-hint">Events are free for now. Paid tickets are coming later.</p>
+      <input type="tel" id="ev-phone" placeholder="Your phone / WhatsApp number (only the review team sees it)" required maxlength="20" />
+      <p class="form-hint">Every event is checked by the review team before it goes live. Events are free for now.</p>
       <button type="submit" class="btn-start-dm">Publish event</button>
       <p id="createMsg" class="msg"></p>
     </form>

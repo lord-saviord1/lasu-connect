@@ -10,6 +10,8 @@ const eventGrid = $('eventGrid'), emptyState = $('emptyState');
 const eventModal = $('eventModal'), modalContent = $('modalContent'), createModal = $('createModal');
 const ticketsDrawer = $('ticketsDrawer'), ticketsList = $('ticketsList');
 const createEventBtn = $('createEventBtn'), myTicketsBtn = $('myTicketsBtn');
+const myEventsBtn = $('myEventsBtn'), reviewLink = $('reviewLink');
+const myEventsDrawer = $('myEventsDrawer'), myEventsList = $('myEventsList');
 
 // Everyone sees Lagos time, whatever their phone's clock is set to.
 const fmt = (iso) => new Date(iso).toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' });
@@ -124,6 +126,40 @@ async function openTickets() {
 myTicketsBtn.addEventListener('click', openTickets);
 $('closeDrawer').addEventListener('click', () => ticketsDrawer.classList.add('hidden'));
 
+// ---------------- My events (organizers: see where each one is in review) ----------------
+
+const EVENT_STATE = {
+  draft: ['Draft', 'used'], pending_review: ['In review', 'warn'], published: ['Live', ''],
+  rejected: ['Needs changes', 'bad'], cancelled: ['Cancelled', 'cancelled'], completed: ['Finished', 'used'],
+};
+
+async function openMyEvents() {
+  myEventsDrawer.classList.remove('hidden');
+  myEventsList.innerHTML = '<p class="muted">Loading…</p>';
+  try {
+    const data = await api('/events/mine/organizing');
+    if (!data.events.length) { myEventsList.innerHTML = '<p class="muted">You have not created any events yet.</p>'; return; }
+    myEventsList.innerHTML = '';
+    data.events.forEach((ev) => {
+      const [label, cls] = EVENT_STATE[ev.status] || [ev.status, 'used'];
+      const el = document.createElement('div');
+      el.className = 'ticket-mini';
+      el.innerHTML = `
+        <div class="name">${esc(ev.title)}</div>
+        <div class="when">${esc(fmt(ev.startsAt))}<br/>${esc(ev.venue)}</div>
+        <span class="ticket-status ${cls}">${esc(label)}</span>
+        ${ev.status === 'published' ? `<div class="ticket-hint" style="text-align:left;margin-top:8px">${Number(ev.ticketsClaimed) || 0} of ${Number(ev.capacity) || 0} tickets claimed</div>` : ''}
+        ${ev.status === 'pending_review' ? '<div class="ticket-hint" style="text-align:left;margin-top:8px">The review team will email you when it is approved.</div>' : ''}
+        ${ev.status === 'rejected' && ev.reviewNote ? `<div class="review-note">${esc(ev.reviewNote)}</div>` : ''}`;
+      myEventsList.appendChild(el);
+    });
+  } catch (err) {
+    myEventsList.innerHTML = `<p class="err">${esc(err.message)}</p>`;
+  }
+}
+myEventsBtn.addEventListener('click', openMyEvents);
+$('closeMyEvents').addEventListener('click', () => myEventsDrawer.classList.add('hidden'));
+
 // ---------------- Create event (approved organizers only) ----------------
 
 createEventBtn.addEventListener('click', () => createModal.classList.remove('hidden'));
@@ -141,12 +177,14 @@ $('createEventForm').addEventListener('submit', async (e) => {
     startsAt: startsAt.toISOString(), // an unambiguous instant: the server runs in UTC, Lagos is UTC+1
     venue: $('ev-venue').value.trim(),
     capacity: Number($('ev-capacity').value),
+    contactPhone: $('ev-phone').value.trim(), // only the review team ever sees this
   };
   try {
-    await api('/events', { method: 'POST', body: payload });
-    msg.className = 'msg success'; msg.textContent = 'Event published!';
+    const res = await api('/events', { method: 'POST', body: payload });
+    msg.className = 'msg success';
+    msg.textContent = res.needsReview ? 'Submitted for review. We will email you when it is approved.' : 'Event published!';
     $('createEventForm').reset();
-    setTimeout(() => { createModal.classList.add('hidden'); msg.textContent = ''; loadEvents(); }, 800);
+    setTimeout(() => { createModal.classList.add('hidden'); msg.textContent = ''; loadEvents(); }, 1800);
   } catch (err) {
     msg.className = 'msg error'; msg.textContent = err.message;
   }
@@ -159,7 +197,9 @@ $('createEventForm').addEventListener('submit', async (e) => {
     myTicketsBtn.classList.remove('hidden');
     // The stored login can be stale (a role may have been granted since), so ask the server.
     api('/auth/me').then((d) => {
-      if (d.user && ['official', 'admin'].includes(d.user.role)) createEventBtn.classList.remove('hidden');
+      const role = d.user && d.user.role;
+      if (['official', 'reviewer', 'admin'].includes(role)) { createEventBtn.classList.remove('hidden'); myEventsBtn.classList.remove('hidden'); }
+      if (['reviewer', 'admin'].includes(role)) reviewLink.classList.remove('hidden');
     }).catch(() => {});
   } else {
     $('signInLink').classList.remove('hidden');

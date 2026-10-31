@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Review events — LASU Connect</title>
+<meta name="description" content="Review team: approve events before they go live.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a2e1a">
+<link rel="canonical" href="https://lasu-connect.netlify.app/review.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LASU Connect">
+<meta property="og:title" content="Review events — LASU Connect">
+<meta property="og:description" content="Review team: approve events before they go live.">
+<meta property="og:url" content="https://lasu-connect.netlify.app/review.html">
+<meta property="og:image" content="https://lasu-connect.netlify.app/og-image.png">
+<meta property="og:locale" content="en_NG">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="shortcut icon" href="/favicon.ico">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="lc-shared.css" />
+<link rel="stylesheet" href="review.css" />
+</head>
+<body>
+
+<nav class="lc-navbar">
+  <a href="chat.html" class="lc-brand">
+    <div class="lc-brand-icon"><span>LC</span></div>
+    <div><span class="lc-brand-name">LASU Connect</span><span class="lc-brand-tag">Review</span></div>
+  </a>
+  <div class="nav-spacer"></div>
+  <a href="events.html" class="nav-icon-btn"><i class="bi bi-calendar-event"></i> Events</a>
+</nav>
+
+<main class="review-main">
+  <h1 class="page-title">Events waiting for review</h1>
+  <p class="page-sub">Check each event is genuine, then approve it or send it back with a reason. The organizer is emailed either way.</p>
+  <div id="queue" class="review-list"></div>
+  <div id="empty" class="review-empty hidden"><i class="bi bi-check2-circle"></i><p>Nothing is waiting. You're all caught up.</p></div>
+</main>
+
+<script src="api.js"></script>
+<script src="review.js"></script>
+</body>
+</html>
