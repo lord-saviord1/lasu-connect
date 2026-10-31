@@ -22,5 +22,9 @@
     { "name": "Faculty of Management Science", "slug": "faculty-of-management-science", "ownerType": "faculty", "postingMode": "open",
       "description": "Faculty of Management Science: notices, events and student discussion.", "admins": [] }
   ],
+    ],
+  "reviewers": ["daniel.ozoemena240822032@st.lasu.edu.ng"],
+  "eventCreators": []
+}
   "eventCreators": []
 }
